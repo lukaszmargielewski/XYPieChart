@@ -1,58 +1,8 @@
-//
-//  XYPieChart.m
-//  XYPieChart
-//
-//  Created by XY Feng on 2/24/12.
-//  Copyright (c) 2012 Xiaoyang Feng. All rights reserved.
-//
-//  Permission is hereby granted, free of charge, to any person
-//  obtaining a copy of this software and associated documentation
-//  files (the "Software"), to deal in the Software without
-//  restriction, including without limitation the rights to use,
-//  copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following
-//  conditions:
-//
-//  The above copyright notice and this permission notice shall be
-//  included in all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-//  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-//  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-//  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-//  OTHER DEALINGS IN THE SOFTWARE.
 
 #import "XYPieChart.h"
 #import <QuartzCore/QuartzCore.h>
 
-@class SliceLayer;
 
-@interface CARadialGradientRenderer : NSObject
-
-@property (nonatomic, weak)     XYPieChart *pieChart;
-@property (nonatomic, weak)     SliceLayer *sliceLayer;
-
-@end
-
-@interface SliceLayer : CAShapeLayer
-
-@property (nonatomic, assign) CGFloat   value;
-@property (nonatomic, assign) CGFloat   percentage;
-@property (nonatomic, assign) double    startAngle;
-@property (nonatomic, assign) double    endAngle;
-@property (nonatomic, assign) BOOL      isSelected;
-@property (nonatomic, strong) NSString  *text;
-
-@property (nonatomic, strong) CALayer *backgroundLayer;
-@property (nonatomic, strong) CARadialGradientRenderer *backgroundRenderer;
-
-
-- (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate;
-@end
 
 @implementation SliceLayer
 @synthesize text = _text;
@@ -144,20 +94,8 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize showPercentage = _showPercentage;
 @synthesize pieLayers = _sliceLayers;
 
-static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat radiusInner, CGFloat startAngle, CGFloat endAngle)
-{
-    CGMutablePathRef path = CGPathCreateMutable();
-    
-    CGPathAddArc(path, NULL, center.x, center.y, radiusOuter, endAngle, startAngle, YES);
-    CGPathAddArc(path, NULL, center.x, center.y, radiusInner, startAngle, endAngle, NO);
-    
-    CGPathCloseSubpath(path);
-    
-    return path;
-}
 
-- (id)initWithFrame:(CGRect)frame
-{
+- (id)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
     if (self)
     {
@@ -190,8 +128,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
     return self;
 }
 
-- (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius
-{
+- (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius{
     self = [self initWithFrame:frame];
     if (self)
     {
@@ -201,8 +138,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
     return self;
 }
 
-- (id)initWithCoder:(NSCoder *)aDecoder
-{
+- (id)initWithCoder:(NSCoder *)aDecoder{
     self = [super initWithCoder:aDecoder];
     if(self)
     {
@@ -234,14 +170,12 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
     return self;
 }
 
-- (void)setPieCenter:(CGPoint)pieCenter
-{
+- (void)setPieCenter:(CGPoint)pieCenter{
     [_pieView setCenter:pieCenter];
     _pieCenter = CGPointMake(_pieView.frame.size.width/2, _pieView.frame.size.height/2);
 }
 
-- (void)setPieRadius:(CGFloat)pieRadius
-{
+- (void)setPieRadius:(CGFloat)pieRadius{
     _pieRadius = pieRadius;
     CGPoint origin = _pieView.frame.origin;
     CGRect frame = CGRectMake(origin.x+_pieCenter.x-pieRadius, origin.y+_pieCenter.y-pieRadius, pieRadius*2, pieRadius*2);
@@ -250,15 +184,13 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
     [_pieView.layer setCornerRadius:_pieRadius];
 }
 
-- (void)setPieBackgroundColor:(UIColor *)color
-{
+- (void)setPieBackgroundColor:(UIColor *)color{
     [_pieView setBackgroundColor:color];
 }
 
 #pragma mark - manage settings
 
-- (void)setShowPercentage:(BOOL)showPercentage
-{
+- (void)setShowPercentage:(BOOL)showPercentage{
     _showPercentage = showPercentage;
     for(SliceLayer *layer in _sliceLayers)
     {
@@ -286,8 +218,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
 
 #pragma mark - Pie Reload Data With Animation
 
-- (void)reloadData
-{
+- (void)reloadData{
     if (_dataSource)
     {
         CALayer *parentLayer = [self pieParentLayer];
@@ -464,8 +395,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
 
 #pragma mark - Animation Delegate + Run Loop Timer
 
-- (void)updateTimerFired:(NSTimer *)timer;
-{
+- (void)updateTimerFired:(NSTimer *)timer;{
 
     [_sliceLayers enumerateObjectsUsingBlock:^(CAShapeLayer * obj, NSUInteger idx, BOOL *stop) {
         
@@ -475,7 +405,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
         NSNumber *presentationLayerEndAngle = [[obj presentationLayer] valueForKey:@"endAngle"];
         CGFloat interpolatedEndAngle = [presentationLayerEndAngle doubleValue];
 
-        CGPathRef path = CGPathCreateArc(_pieCenter, _pieRadius, _pieRadius - _pieRadiusInner, interpolatedStartAngle, interpolatedEndAngle);
+        CGPathRef path = CGPathCreateArc(_pieCenter, _pieRadius, _pieRadiusInner, interpolatedStartAngle, interpolatedEndAngle);
         [obj setPath:path];
         CFRelease(path);
         
@@ -489,8 +419,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
     }];
 }
 
-- (void)animationDidStart:(CAAnimation *)anim
-{
+- (void)animationDidStart:(CAAnimation *)anim{
     if (_animationTimer == nil) {
         static float timeInterval = 1.0/60.0;
         // Run the animation timer on the main thread.
@@ -503,8 +432,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
     [_animations addObject:anim];
 }
 
-- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)animationCompleted
-{
+- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)animationCompleted{
     [_animations removeObject:anim];
     
     if ([_animations count] == 0) {
@@ -623,15 +551,16 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
     maskedLayer.frame = [self pieParentLayer].bounds;
     [maskedLayer setZPosition:0];
     [maskedLayer setNeedsDisplayOnBoundsChange:YES];
-    [maskedLayer addSublayer:pieLayer];
+    //[maskedLayer addSublayer:pieLayer];
+    [maskedLayer setMask:pieLayer];
     
     pieLayer.backgroundLayer = maskedLayer;
     
     CARadialGradientRenderer *renderer = [[CARadialGradientRenderer alloc] init];
     renderer.pieChart = self;
     pieLayer.backgroundRenderer = renderer;
-    maskedLayer.borderWidth = 1.0;
-    maskedLayer.borderColor = [UIColor whiteColor].CGColor;
+    //maskedLayer.borderWidth = 1.0;
+    //maskedLayer.borderColor = [UIColor whiteColor].CGColor;
     maskedLayer.backgroundColor = [UIColor clearColor].CGColor;
     maskedLayer.delegate = renderer;
     [maskedLayer setNeedsDisplay];
@@ -661,7 +590,8 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat ra
 
     NSUInteger index = [_pieChart.pieLayers indexOfObject:self.sliceLayer];
     
-    [_pieChart.dataSource pieChart:_pieChart drawPieBackgroundInContext:ctx forLayer:layer atIndex:index];
+    [_pieChart.dataSource pieChart:_pieChart drawPieBackgroundInContext:ctx forBackgroundLayer:layer sliceLayer:self.sliceLayer atIndex:index];
+    
 }
 
 @end

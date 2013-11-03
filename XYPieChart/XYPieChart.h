@@ -29,6 +29,47 @@
 #import <UIKit/UIKit.h>
 
 @class XYPieChart;
+@class SliceLayer;
+
+@interface CARadialGradientRenderer : NSObject
+
+@property (nonatomic, weak)     XYPieChart *pieChart;
+@property (nonatomic, weak)     SliceLayer *sliceLayer;
+
+@end
+
+
+@interface SliceLayer : CAShapeLayer
+
+@property (nonatomic, assign) CGFloat   value;
+@property (nonatomic, assign) CGFloat   percentage;
+@property (nonatomic, assign) double    startAngle;
+@property (nonatomic, assign) double    endAngle;
+@property (nonatomic, assign) BOOL      isSelected;
+@property (nonatomic, strong) NSString  *text;
+
+@property (nonatomic, strong) CALayer *backgroundLayer;
+@property (nonatomic, strong) CARadialGradientRenderer *backgroundRenderer;
+
+
+- (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate;
+@end
+
+static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat width, CGFloat startAngle, CGFloat endAngle){
+    
+    CGMutablePathRef path = CGPathCreateMutable();
+    CGFloat radiusOuter = radius;
+    CGFloat radiusInner = radius - width;
+    
+    CGPathAddArc(path, NULL, center.x, center.y, radiusOuter, endAngle, startAngle, YES);
+    CGPathAddArc(path, NULL, center.x, center.y, radiusInner, startAngle, endAngle, NO);
+    
+    CGPathCloseSubpath(path);
+    
+    return path;
+}
+
+
 @protocol XYPieChartDataSource <NSObject>
 @required
 - (NSUInteger)numberOfSlicesInPieChart:(XYPieChart *)pieChart;
@@ -36,7 +77,7 @@
 
 @optional
 - (UIColor *)pieChart:(XYPieChart *)pieChart colorForSliceAtIndex:(NSUInteger)index;
-- (void)pieChart:(XYPieChart *)pieChart drawPieBackgroundInContext:(CGContextRef)ctx forLayer:(CALayer *)layer atIndex:(NSUInteger)index;
+- (void)pieChart:(XYPieChart *)pieChart drawPieBackgroundInContext:(CGContextRef)ctx forBackgroundLayer:(CALayer *)backgroundLayer sliceLayer:(SliceLayer *)sliceLayer atIndex:(NSUInteger)index;
 
 
 - (NSString *)pieChart:(XYPieChart *)pieChart textForSliceAtIndex:(NSUInteger)index;
@@ -51,6 +92,7 @@
 @end
 
 @interface XYPieChart : UIView
+
 @property(nonatomic, weak) id<XYPieChartDataSource> dataSource;
 @property(nonatomic, weak) id<XYPieChartDelegate> delegate;
 @property(nonatomic, assign) CGFloat startPieAngle;
@@ -74,5 +116,6 @@
 
 - (void)setSliceSelectedAtIndex:(NSInteger)index;
 - (void)setSliceDeselectedAtIndex:(NSInteger)index;
+
 
 @end;
