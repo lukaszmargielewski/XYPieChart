@@ -29,13 +29,27 @@
 #import "XYPieChart.h"
 #import <QuartzCore/QuartzCore.h>
 
+@class SliceLayer;
+
+@interface CARadialGradientRenderer : NSObject
+
+@property (nonatomic, weak)     XYPieChart *pieChart;
+@property (nonatomic, weak)     SliceLayer *sliceLayer;
+
+@end
+
 @interface SliceLayer : CAShapeLayer
+
 @property (nonatomic, assign) CGFloat   value;
 @property (nonatomic, assign) CGFloat   percentage;
 @property (nonatomic, assign) double    startAngle;
 @property (nonatomic, assign) double    endAngle;
 @property (nonatomic, assign) BOOL      isSelected;
 @property (nonatomic, strong) NSString  *text;
+
+@property (nonatomic, strong) CALayer *backgroundLayer;
+@property (nonatomic, strong) CARadialGradientRenderer *backgroundRenderer;
+
 
 - (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate;
 @end
@@ -47,12 +61,13 @@
 @synthesize startAngle = _startAngle;
 @synthesize endAngle = _endAngle;
 @synthesize isSelected = _isSelected;
-- (NSString*)description
-{
+@synthesize backgroundRenderer = _backgroundRenderer;
+
+- (NSString*)description{
     return [NSString stringWithFormat:@"value:%f, percentage:%0.0f, start:%f, end:%f", _value, _percentage, _startAngle/M_PI*180, _endAngle/M_PI*180];
 }
-+ (BOOL)needsDisplayForKey:(NSString *)key 
-{
+
++ (BOOL)needsDisplayForKey:(NSString *)key {
     if ([key isEqualToString:@"startAngle"] || [key isEqualToString:@"endAngle"]) {
         return YES;
     }
@@ -60,8 +75,7 @@
         return [super needsDisplayForKey:key];
     }
 }
-- (id)initWithLayer:(id)layer
-{
+- (id)initWithLayer:(id)layer{
     if (self = [super initWithLayer:layer])
     {
         if ([layer isKindOfClass:[SliceLayer class]]) {
@@ -71,8 +85,8 @@
     }
     return self;
 }
-- (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate
-{
+
+- (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate{
     CABasicAnimation *arcAnimation = [CABasicAnimation animationWithKeyPath:key];
     NSNumber *currentAngle = [[self presentationLayer] valueForKey:key];
     if(!currentAngle) currentAngle = from;
@@ -83,13 +97,18 @@
     [self addAnimation:arcAnimation forKey:key];
     [self setValue:to forKey:key];
 }
+-(void)setBackgroundRenderer:(CARadialGradientRenderer *)backgroundRenderer{
+
+    _backgroundRenderer = backgroundRenderer;
+    backgroundRenderer.sliceLayer = self;
+    
+}
 @end
 
 @interface XYPieChart (Private) 
 - (void)updateTimerFired:(NSTimer *)timer;
-- (SliceLayer *)createSliceLayer;
+- (SliceLayer *)createSliceLayerAtIndex:(NSUInteger)index;
 - (CGSize)sizeThatFitsString:(NSString *)string;
-- (void)updateLabelForLayer:(SliceLayer *)pieLayer value:(CGFloat)value;
 - (void)notifyDelegateOfSelectionChangeFrom:(NSUInteger)previousSelection to:(NSUInteger)newSelection;
 @end
 
@@ -102,6 +121,8 @@
     //animation control
     NSTimer *_animationTimer;
     NSMutableArray *_animations;
+    NSMutableArray *_sliceLayers;
+    
 }
 
 static NSUInteger kDefaultSliceZOrder = 100;
@@ -112,6 +133,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize animationSpeed = _animationSpeed;
 @synthesize pieCenter = _pieCenter;
 @synthesize pieRadius = _pieRadius;
+@synthesize pieRadiusInner = _pieRadiusInner;
 @synthesize showLabel = _showLabel;
 @synthesize labelFont = _labelFont;
 @synthesize labelColor = _labelColor;
@@ -120,12 +142,11 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize selectedSliceStroke = _selectedSliceStroke;
 @synthesize selectedSliceOffsetRadius = _selectedSliceOffsetRadius;
 @synthesize showPercentage = _showPercentage;
+@synthesize pieLayers = _sliceLayers;
 
-static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat startAngle, CGFloat endAngle)
+static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat radiusInner, CGFloat startAngle, CGFloat endAngle)
 {
     CGMutablePathRef path = CGPathCreateMutable();
-    
-    CGFloat radiusInner = radiusOuter / 2.0;
     
     CGPathAddArc(path, NULL, center.x, center.y, radiusOuter, endAngle, startAngle, YES);
     CGPathAddArc(path, NULL, center.x, center.y, radiusInner, startAngle, endAngle, NO);
@@ -147,6 +168,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
         
         _selectedSliceIndex = -1;
         _animations = [[NSMutableArray alloc] init];
+        _sliceLayers = [[NSMutableArray alloc] init];
         
         _animationSpeed = 0.5;
         _startPieAngle = M_PI_2*3;
@@ -159,6 +181,9 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
         _labelRadius = _pieRadius/2;
         _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
         
+        //self.layer.borderWidth = 1.0;
+        //_pieView.layer.borderWidth = 1.0;
+        //_pieView.layer.borderColor = [UIColor greenColor].CGColor;
         _showLabel = YES;
         _showPercentage = YES;
     }
@@ -187,6 +212,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
         
         _selectedSliceIndex = -1;
         _animations = [[NSMutableArray alloc] init];
+        _sliceLayers = [[NSMutableArray alloc] init];
         
         _animationSpeed = 0.5;
         _startPieAngle = M_PI_2*3;
@@ -194,6 +220,8 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
         
         CGRect bounds = [[self layer] bounds];
         self.pieRadius = MIN(bounds.size.width/2, bounds.size.height/2) - 10;
+        self.pieRadiusInner = 0;
+        
         self.pieCenter = CGPointMake(bounds.size.width/2, bounds.size.height/2);
         self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
         _labelColor = [UIColor whiteColor];
@@ -232,7 +260,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
 - (void)setShowPercentage:(BOOL)showPercentage
 {
     _showPercentage = showPercentage;
-    for(SliceLayer *layer in _pieView.layer.sublayers)
+    for(SliceLayer *layer in _sliceLayers)
     {
         CATextLayer *textLayer = [[layer sublayers] objectAtIndex:0];
         [textLayer setHidden:!_showLabel];
@@ -262,11 +290,10 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
 {
     if (_dataSource)
     {
-        CALayer *parentLayer = [_pieView layer];
-        NSArray *slicelayers = [parentLayer sublayers];
+        CALayer *parentLayer = [self pieParentLayer];
         
         _selectedSliceIndex = -1;
-        [slicelayers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        [_sliceLayers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             SliceLayer *layer = (SliceLayer *)obj;
             if(layer.isSelected)
                 [self setSliceDeselectedAtIndex:idx];
@@ -285,6 +312,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
         }
         
         double angles[sliceCount];
+        
         for (int index = 0; index < sliceCount; index++) {
             double div;
             if (sum == 0)
@@ -301,15 +329,16 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
         
         __block NSMutableArray *layersToRemove = nil;
         
-        BOOL isOnStart = ([slicelayers count] == 0 && sliceCount);
-        NSInteger diff = sliceCount - [slicelayers count];
-        layersToRemove = [NSMutableArray arrayWithArray:slicelayers];
+        BOOL isOnStart = ([_sliceLayers count] == 0 && sliceCount);
+        NSInteger diff = sliceCount - [_sliceLayers count];
+        layersToRemove = [NSMutableArray arrayWithArray:_sliceLayers];
         
-        BOOL isOnEnd = ([slicelayers count] && (sliceCount == 0 || sum <= 0));
+        BOOL isOnEnd = ([_sliceLayers count] && (sliceCount == 0 || sum <= 0));
+        
         if(isOnEnd)
         {
-            for(SliceLayer *layer in _pieView.layer.sublayers){
-                [self updateLabelForLayer:layer value:0];
+            for(SliceLayer *layer in _sliceLayers){
+
                 [layer createArcAnimationForKey:@"startAngle"
                                       fromValue:[NSNumber numberWithDouble:_startPieAngle]
                                         toValue:[NSNumber numberWithDouble:_startPieAngle] 
@@ -331,17 +360,19 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
             double startFromAngle = _startPieAngle + startToAngle;
             double endFromAngle = _startPieAngle + endToAngle;
             
-            if( index >= [slicelayers count] )
+            if( index >= [_sliceLayers count] )
             {
-                layer = [self createSliceLayer];
+                layer = [self createSliceLayerAtIndex:index];
                 if (isOnStart)
                     startFromAngle = endFromAngle = _startPieAngle;
-                [parentLayer addSublayer:layer];
+                [parentLayer addSublayer:layer.backgroundLayer];
+                [_sliceLayers addObject:layer];
+                
                 diff--;
             }
             else
             {
-                SliceLayer *onelayer = [slicelayers objectAtIndex:index];
+                SliceLayer *onelayer = [_sliceLayers objectAtIndex:index];
                 if(diff == 0 || onelayer.value == (CGFloat)values[index])
                 {
                     layer = onelayer;
@@ -349,18 +380,23 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
                 }
                 else if(diff > 0)
                 {
-                    layer = [self createSliceLayer];
-                    [parentLayer insertSublayer:layer atIndex:index];
+                    layer = [self createSliceLayerAtIndex:index];
+                    [parentLayer insertSublayer:layer.backgroundLayer atIndex:index];
+                    [_sliceLayers insertObject:layer atIndex:index];
                     diff--;
                 }
                 else if(diff < 0)
                 {
                     while(diff < 0) 
                     {
-                        [onelayer removeFromSuperlayer];
-                        [parentLayer addSublayer:onelayer];
+                        [onelayer.backgroundLayer removeFromSuperlayer];
+                        [_sliceLayers removeObject:onelayer];
+                        [parentLayer addSublayer:onelayer.backgroundLayer];
+                        [_sliceLayers addObject:onelayer];
+                        
                         diff++;
-                        onelayer = [slicelayers objectAtIndex:index];
+                        onelayer = [_sliceLayers objectAtIndex:index];
+                        
                         if(onelayer.value == (CGFloat)values[index] || diff == 0)
                         {
                             layer = onelayer;
@@ -373,24 +409,15 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
             
             layer.value = values[index];
             layer.percentage = (sum)?layer.value/sum:0;
-            UIColor *color = nil;
-            if([_dataSource respondsToSelector:@selector(pieChart:colorForSliceAtIndex:)])
-            {
+            
+            UIColor *color = [UIColor blueColor];
+            
+            if (_dataSource && [_dataSource respondsToSelector:@selector(pieChart:colorForSliceAtIndex:)]) {
                 color = [_dataSource pieChart:self colorForSliceAtIndex:index];
             }
-            
-            if(!color)
-            {
-                color = [UIColor colorWithHue:((index/8)%20)/20.0+0.02 saturation:(index%8+3)/10.0 brightness:91/100.0 alpha:1];
-            }
-            
             [layer setFillColor:color.CGColor];
-            if([_dataSource respondsToSelector:@selector(pieChart:textForSliceAtIndex:)])
-            {
-                layer.text = [_dataSource pieChart:self textForSliceAtIndex:index];
-            }
             
-            [self updateLabelForLayer:layer value:values[index]];
+            
             [layer createArcAnimationForKey:@"startAngle"
                                   fromValue:[NSNumber numberWithDouble:startFromAngle]
                                     toValue:[NSNumber numberWithDouble:startToAngle+_startPieAngle] 
@@ -399,27 +426,33 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
                                   fromValue:[NSNumber numberWithDouble:endFromAngle]
                                     toValue:[NSNumber numberWithDouble:endToAngle+_startPieAngle] 
                                    Delegate:self];
+            
             startToAngle = endToAngle;
         }
         [CATransaction setDisableActions:YES];
+        
         for(SliceLayer *layer in layersToRemove)
         {
             [layer setFillColor:[self backgroundColor].CGColor];
             [layer setDelegate:nil];
-            [layer setZPosition:0];
+            [layer.backgroundLayer setZPosition:0];
             CATextLayer *textLayer = [[layer sublayers] objectAtIndex:0];
             [textLayer setHidden:YES];
         }
         
         [layersToRemove enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-            [obj removeFromSuperlayer];
+            SliceLayer *lay = (SliceLayer *)obj;
+            
+            [lay.backgroundLayer removeFromSuperlayer];
+            [_sliceLayers removeObject:lay];
+//            [lay removeFromSuperlayer];
         }];
         
         [layersToRemove removeAllObjects];
         
-        for(SliceLayer *layer in _pieView.layer.sublayers)
+        for(SliceLayer *layer in _sliceLayers)
         {
-            [layer setZPosition:kDefaultSliceZOrder];
+            [layer.backgroundLayer setZPosition:kDefaultSliceZOrder];
         }
         
         [_pieView setUserInteractionEnabled:YES];
@@ -432,11 +465,9 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
 #pragma mark - Animation Delegate + Run Loop Timer
 
 - (void)updateTimerFired:(NSTimer *)timer;
-{   
-    CALayer *parentLayer = [_pieView layer];
-    NSArray *pieLayers = [parentLayer sublayers];
+{
 
-    [pieLayers enumerateObjectsUsingBlock:^(CAShapeLayer * obj, NSUInteger idx, BOOL *stop) {
+    [_sliceLayers enumerateObjectsUsingBlock:^(CAShapeLayer * obj, NSUInteger idx, BOOL *stop) {
         
         NSNumber *presentationLayerStartAngle = [[obj presentationLayer] valueForKey:@"startAngle"];
         CGFloat interpolatedStartAngle = [presentationLayerStartAngle doubleValue];
@@ -444,7 +475,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
         NSNumber *presentationLayerEndAngle = [[obj presentationLayer] valueForKey:@"endAngle"];
         CGFloat interpolatedEndAngle = [presentationLayerEndAngle doubleValue];
 
-        CGPathRef path = CGPathCreateArc(_pieCenter, _pieRadius, interpolatedStartAngle, interpolatedEndAngle);
+        CGPathRef path = CGPathCreateArc(_pieCenter, _pieRadius, _pieRadius - _pieRadiusInner, interpolatedStartAngle, interpolatedEndAngle);
         [obj setPath:path];
         CFRelease(path);
         
@@ -489,11 +520,8 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
     __block NSUInteger selectedIndex = -1;
     
     CGAffineTransform transform = CGAffineTransformIdentity;
-    
-    CALayer *parentLayer = [_pieView layer];
-    NSArray *pieLayers = [parentLayer sublayers];
-    
-    [pieLayers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+
+    [_sliceLayers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         SliceLayer *pieLayer = (SliceLayer *)obj;
         CGPathRef path = [pieLayer path];
         
@@ -511,37 +539,6 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
     return selectedIndex;
 }
 
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
-{
-    [self touchesMoved:touches withEvent:event];
-}
-
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
-{
-    UITouch *touch = [touches anyObject];
-    CGPoint point = [touch locationInView:_pieView];
-    [self getCurrentSelectedOnTouch:point];
-}
-
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
-{
-    UITouch *touch = [touches anyObject];
-    CGPoint point = [touch locationInView:_pieView];
-    NSInteger selectedIndex = [self getCurrentSelectedOnTouch:point];
-    [self notifyDelegateOfSelectionChangeFrom:_selectedSliceIndex to:selectedIndex];
-    [self touchesCancelled:touches withEvent:event];
-}
-
-- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
-{
-    CALayer *parentLayer = [_pieView layer];
-    NSArray *pieLayers = [parentLayer sublayers];
-    
-    for (SliceLayer *pieLayer in pieLayers) {
-        [pieLayer setZPosition:kDefaultSliceZOrder];
-        [pieLayer setLineWidth:0.0];
-    }
-}
 
 #pragma mark - Selection Notification
 
@@ -567,7 +564,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
                 [_delegate pieChart:self didSelectSliceAtIndex:newSelection];
         }
     }else if (newSelection != -1){
-        SliceLayer *layer = [_pieView.layer.sublayers objectAtIndex:newSelection];
+        SliceLayer *layer = [_sliceLayers objectAtIndex:newSelection];
         if(_selectedSliceOffsetRadius > 0 && layer){
             if (layer.isSelected) {
                 if ([_delegate respondsToSelector:@selector(pieChart:willDeselectSliceAtIndex:)])
@@ -593,7 +590,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
 {
     if(_selectedSliceOffsetRadius <= 0)
         return;
-    SliceLayer *layer = [_pieView.layer.sublayers objectAtIndex:index];
+    SliceLayer *layer = [_sliceLayers objectAtIndex:index];
     if (layer && !layer.isSelected) {
         CGPoint currPos = layer.position;
         double middleAngle = (layer.startAngle + layer.endAngle)/2.0;
@@ -607,7 +604,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
 {
     if(_selectedSliceOffsetRadius <= 0)
         return;
-    SliceLayer *layer = [_pieView.layer.sublayers objectAtIndex:index];
+    SliceLayer *layer = [_sliceLayers objectAtIndex:index];
     if (layer && layer.isSelected) {
         layer.position = CGPointMake(0, 0);
         layer.isSelected = NO;
@@ -615,69 +612,56 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat st
 }
 
 #pragma mark - Pie Layer Creation Method
+-(CALayer *)pieParentLayer{return _pieView.layer;}
 
-- (SliceLayer *)createSliceLayer
+- (SliceLayer *)createSliceLayerAtIndex:(NSUInteger)index
 {
     SliceLayer *pieLayer = [SliceLayer layer];
-    [pieLayer setZPosition:0];
     [pieLayer setStrokeColor:NULL];
-    [pieLayer setFillRule:kCAFillRuleNonZero];
-    CATextLayer *textLayer = [CATextLayer layer];
-    textLayer.contentsScale = [[UIScreen mainScreen] scale];
-    CGFontRef font = nil;
-    if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0) {
-        font = CGFontCreateCopyWithVariations((__bridge CGFontRef)(self.labelFont), (__bridge CFDictionaryRef)(@{}));
-    } else {
-        font = CGFontCreateWithFontName((__bridge CFStringRef)[self.labelFont fontName]);
-    }
-    if (font) {
-        [textLayer setFont:font];
-        CFRelease(font);
-    }
-    [textLayer setFontSize:self.labelFont.pointSize];
-    [textLayer setAnchorPoint:CGPointMake(0.5, 0.5)];
-    [textLayer setAlignmentMode:kCAAlignmentCenter];
-    [textLayer setBackgroundColor:[UIColor clearColor].CGColor];
-    [textLayer setForegroundColor:self.labelColor.CGColor];
-    if (self.labelShadowColor) {
-        [textLayer setShadowColor:self.labelShadowColor.CGColor];
-        [textLayer setShadowOffset:CGSizeZero];
-        [textLayer setShadowOpacity:1.0f];
-        [textLayer setShadowRadius:2.0f];
-    }
-    CGSize size = [@"0" sizeWithFont:self.labelFont];
-    [CATransaction setDisableActions:YES];
-    [textLayer setFrame:CGRectMake(0, 0, size.width, size.height)];
-    [textLayer setPosition:CGPointMake(_pieCenter.x + (_labelRadius * cos(0)), _pieCenter.y + (_labelRadius * sin(0)))];
-    [CATransaction setDisableActions:NO];
-    [pieLayer addSublayer:textLayer];
+    
+    CALayer *maskedLayer = [CALayer layer];
+    maskedLayer.frame = [self pieParentLayer].bounds;
+    [maskedLayer setZPosition:0];
+    [maskedLayer setNeedsDisplayOnBoundsChange:YES];
+    [maskedLayer addSublayer:pieLayer];
+    
+    pieLayer.backgroundLayer = maskedLayer;
+    
+    CARadialGradientRenderer *renderer = [[CARadialGradientRenderer alloc] init];
+    renderer.pieChart = self;
+    pieLayer.backgroundRenderer = renderer;
+    maskedLayer.borderWidth = 1.0;
+    maskedLayer.borderColor = [UIColor whiteColor].CGColor;
+    maskedLayer.backgroundColor = [UIColor clearColor].CGColor;
+    maskedLayer.delegate = renderer;
+    [maskedLayer setNeedsDisplay];
+    
+    
     return pieLayer;
 }
 
-- (void)updateLabelForLayer:(SliceLayer *)pieLayer value:(CGFloat)value
-{
-    CATextLayer *textLayer = [[pieLayer sublayers] objectAtIndex:0];
-    [textLayer setHidden:!_showLabel];
-    if(!_showLabel) return;
-    NSString *label;
-    if(_showPercentage)
-        label = [NSString stringWithFormat:@"%0.0f", pieLayer.percentage*100];
-    else
-        label = (pieLayer.text)?pieLayer.text:[NSString stringWithFormat:@"%0.0f", value];
+-(void)layoutSubviews{
+
+    [super layoutSubviews];
     
-    CGSize size = [label sizeWithFont:self.labelFont];
+    for (CALayer * layer in [self pieParentLayer].sublayers) {
+        layer.frame = [self pieParentLayer].bounds;
+    }
+}
+
+@end
+
+@implementation CARadialGradientRenderer : NSObject
+
+@synthesize pieChart = _pieChart;
+@synthesize sliceLayer = _sliceLayer;
+
+
+-(void)drawLayer:(CALayer *)layer inContext:(CGContextRef)ctx{
+
+    NSUInteger index = [_pieChart.pieLayers indexOfObject:self.sliceLayer];
     
-    [CATransaction setDisableActions:YES];
-    if(M_PI*2*_labelRadius*pieLayer.percentage < MAX(size.width,size.height) || value <= 0)
-    {
-        [textLayer setString:@""];
-    }
-    else
-    {
-        [textLayer setString:label];
-        [textLayer setBounds:CGRectMake(0, 0, size.width, size.height)];
-    }
-    [CATransaction setDisableActions:NO];
+    [_pieChart.dataSource pieChart:_pieChart drawPieBackgroundInContext:ctx forLayer:layer atIndex:index];
 }
 
 @end

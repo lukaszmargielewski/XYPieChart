@@ -33,8 +33,12 @@
 @required
 - (NSUInteger)numberOfSlicesInPieChart:(XYPieChart *)pieChart;
 - (CGFloat)pieChart:(XYPieChart *)pieChart valueForSliceAtIndex:(NSUInteger)index;
+
 @optional
 - (UIColor *)pieChart:(XYPieChart *)pieChart colorForSliceAtIndex:(NSUInteger)index;
+- (void)pieChart:(XYPieChart *)pieChart drawPieBackgroundInContext:(CGContextRef)ctx forLayer:(CALayer *)layer atIndex:(NSUInteger)index;
+
+
 - (NSString *)pieChart:(XYPieChart *)pieChart textForSliceAtIndex:(NSUInteger)index;
 @end
 
@@ -53,6 +57,7 @@
 @property(nonatomic, assign) CGFloat animationSpeed;
 @property(nonatomic, assign) CGPoint pieCenter;
 @property(nonatomic, assign) CGFloat pieRadius;
+@property(nonatomic, assign) CGFloat pieRadiusInner;
 @property(nonatomic, assign) BOOL    showLabel;
 @property(nonatomic, strong) UIFont  *labelFont;
 @property(nonatomic, strong) UIColor *labelColor;
@@ -61,6 +66,8 @@
 @property(nonatomic, assign) CGFloat selectedSliceStroke;
 @property(nonatomic, assign) CGFloat selectedSliceOffsetRadius;
 @property(nonatomic, assign) BOOL    showPercentage;
+@property (nonatomic, readonly)  NSMutableArray *pieLayers;
+
 - (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius;
 - (void)reloadData;
 - (void)setPieBackgroundColor:(UIColor *)color;
