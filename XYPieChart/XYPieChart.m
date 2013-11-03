@@ -36,6 +36,7 @@
 @property (nonatomic, assign) double    endAngle;
 @property (nonatomic, assign) BOOL      isSelected;
 @property (nonatomic, strong) NSString  *text;
+
 - (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate;
 @end
 
@@ -120,12 +121,15 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize selectedSliceOffsetRadius = _selectedSliceOffsetRadius;
 @synthesize showPercentage = _showPercentage;
 
-static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat startAngle, CGFloat endAngle) 
+static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radiusOuter, CGFloat startAngle, CGFloat endAngle)
 {
     CGMutablePathRef path = CGPathCreateMutable();
-    CGPathMoveToPoint(path, NULL, center.x, center.y);
     
-    CGPathAddArc(path, NULL, center.x, center.y, radius, startAngle, endAngle, 0);
+    CGFloat radiusInner = radiusOuter / 2.0;
+    
+    CGPathAddArc(path, NULL, center.x, center.y, radiusOuter, endAngle, startAngle, YES);
+    CGPathAddArc(path, NULL, center.x, center.y, radiusInner, startAngle, endAngle, NO);
+    
     CGPathCloseSubpath(path);
     
     return path;
@@ -617,6 +621,7 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat startAn
     SliceLayer *pieLayer = [SliceLayer layer];
     [pieLayer setZPosition:0];
     [pieLayer setStrokeColor:NULL];
+    [pieLayer setFillRule:kCAFillRuleNonZero];
     CATextLayer *textLayer = [CATextLayer layer];
     textLayer.contentsScale = [[UIScreen mainScreen] scale];
     CGFontRef font = nil;
