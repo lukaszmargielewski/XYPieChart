@@ -27,6 +27,7 @@
 //  OTHER DEALINGS IN THE SOFTWARE.
 
 #import <UIKit/UIKit.h>
+#import <QuartzCore/QuartzCore.h>
 
 @class XYPieChart;
 @class SliceLayer;
@@ -79,8 +80,6 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 - (UIColor *)pieChart:(XYPieChart *)pieChart colorForSliceAtIndex:(NSUInteger)index;
 - (void)pieChart:(XYPieChart *)pieChart renderPieBackgroundInContext:(CGContextRef)ctx forBackgroundLayer:(CALayer *)backgroundLayer sliceLayer:(SliceLayer *)sliceLayer atIndex:(NSUInteger)index;
 
--(void)pieChart:(XYPieChart *)pieChart renderCenterInContext:(CGContextRef)ctx rect:(CGRect)bounds;
-
 - (NSString *)pieChart:(XYPieChart *)pieChart textForSliceAtIndex:(NSUInteger)index;
 @end
 
@@ -109,6 +108,12 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property(nonatomic, assign) CGFloat selectedSliceStroke;
 @property(nonatomic, assign) CGFloat selectedSliceOffsetRadius;
 @property(nonatomic, assign) BOOL    showPercentage;
+
+@property (nonatomic, readonly) CATextLayer *centerValueTitleLayer;
+@property (nonatomic, readonly) CATextLayer *centerValueSubtitleLayer;
+@property (nonatomic, readonly) CALayer *centerBackgroundLayer;
+@property (nonatomic, readonly) CALayer *centerContentLayer;
+
 @property (nonatomic, readonly)  NSMutableArray *pieLayers;
 
 - (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius;

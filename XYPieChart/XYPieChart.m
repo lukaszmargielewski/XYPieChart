@@ -109,7 +109,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _sliceLayers = [[NSMutableArray alloc] init];
         
         _animationSpeed = 0.5;
-        _startPieAngle = M_PI_2*3;
+        _startPieAngle = 0;//M_PI_2*3;
         _selectedSliceStroke = 3.0;
         
         self.pieRadius = MIN(frame.size.width/2, frame.size.height/2) - 10;
@@ -119,9 +119,26 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _labelRadius = _pieRadius/2;
         _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
         
-        //self.layer.borderWidth = 1.0;
-        //_pieView.layer.borderWidth = 1.0;
-        //_pieView.layer.borderColor = [UIColor greenColor].CGColor;
+   
+        _centerBackgroundLayer = [CALayer layer];
+        _centerBackgroundLayer.contentsGravity = kCAGravityResizeAspectFill;
+        _centerBackgroundLayer.contents = (id)[UIImage imageNamed:@"pie_center.png"].CGImage;
+        
+        _centerContentLayer = [CALayer layer];
+        _centerContentLayer.contentsGravity = kCAGravityCenter;
+        
+        [_centerBackgroundLayer addSublayer:_centerContentLayer];
+        
+        [self.layer addSublayer:_centerBackgroundLayer];
+        
+    
+        /*
+        _centerBackgroundLayer.borderWidth = 1.0;
+        _centerBackgroundLayer.borderColor = [UIColor colorWithRed:0.0 green:1.0 blue:0.0 alpha:0.5].CGColor;
+        
+        _centerContentLayer.borderWidth = 2.0;
+        _centerContentLayer.borderColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.5].CGColor;
+        */
         _showLabel = YES;
         _showPercentage = YES;
     }
@@ -151,7 +168,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _sliceLayers = [[NSMutableArray alloc] init];
         
         _animationSpeed = 0.5;
-        _startPieAngle = M_PI_2*3;
+        _startPieAngle = 0;//M_PI_2*3;
         _selectedSliceStroke = 3.0;
         
         CGRect bounds = [[self layer] bounds];
@@ -393,12 +410,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
     
     [self setNeedsDisplay];
 }
--(void)drawRect:(CGRect)rect{
 
-    if (_dataSource && [_dataSource respondsToSelector:@selector(pieChart:renderCenterInContext:rect:)]) {
-        [_dataSource pieChart:self renderCenterInContext:UIGraphicsGetCurrentContext() rect:rect];
-    }
-}
 #pragma mark - Animation Delegate + Run Loop Timer
 
 - (void)updateTimerFired:(NSTimer *)timer;{
@@ -581,6 +593,20 @@ static NSUInteger kDefaultSliceZOrder = 100;
     for (CALayer * layer in [self pieParentLayer].sublayers) {
         layer.frame = [self pieParentLayer].bounds;
     }
+    
+    // Layout center layers:
+    
+    CGFloat mx = self.pieRadiusInner;
+    CGFloat W = CGRectGetWidth(self.bounds);
+    CGFloat w = W - 2.0 * mx;
+    
+    CGRect f = CGRectMake(mx + 1, mx + 1, w - 2, w - 2);
+    
+   
+    _centerBackgroundLayer.frame = f;
+    _centerContentLayer.frame = _centerBackgroundLayer.bounds;
+    _centerBackgroundLayer.cornerRadius = _centerContentLayer.cornerRadius = w/2;
+    
 }
 
 @end
