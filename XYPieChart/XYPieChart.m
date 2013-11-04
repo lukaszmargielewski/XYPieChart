@@ -219,8 +219,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
 #pragma mark - Pie Reload Data With Animation
 
 - (void)reloadData{
-    if (_dataSource)
-    {
+    if (_dataSource){
         CALayer *parentLayer = [self pieParentLayer];
         
         _selectedSliceIndex = -1;
@@ -391,8 +390,15 @@ static NSUInteger kDefaultSliceZOrder = 100;
         [CATransaction setDisableActions:NO];
         [CATransaction commit];
     }
+    
+    [self setNeedsDisplay];
 }
+-(void)drawRect:(CGRect)rect{
 
+    if (_dataSource && [_dataSource respondsToSelector:@selector(pieChart:renderCenterInContext:rect:)]) {
+        [_dataSource pieChart:self renderCenterInContext:UIGraphicsGetCurrentContext() rect:rect];
+    }
+}
 #pragma mark - Animation Delegate + Run Loop Timer
 
 - (void)updateTimerFired:(NSTimer *)timer;{
@@ -443,8 +449,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
 
 #pragma mark - Touch Handing (Selection Notification)
 
-- (NSInteger)getCurrentSelectedOnTouch:(CGPoint)point
-{
+- (NSInteger)getCurrentSelectedOnTouch:(CGPoint)point{
     __block NSUInteger selectedIndex = -1;
     
     CGAffineTransform transform = CGAffineTransformIdentity;
@@ -590,7 +595,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
 
     NSUInteger index = [_pieChart.pieLayers indexOfObject:self.sliceLayer];
     
-    [_pieChart.dataSource pieChart:_pieChart drawPieBackgroundInContext:ctx forBackgroundLayer:layer sliceLayer:self.sliceLayer atIndex:index];
+    [_pieChart.dataSource pieChart:_pieChart renderPieBackgroundInContext:ctx forBackgroundLayer:layer sliceLayer:self.sliceLayer atIndex:index];
     
 }
 

@@ -55,7 +55,7 @@
 - (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate;
 @end
 
-static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat width, CGFloat startAngle, CGFloat endAngle){
+static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat width, CGFloat startAngle, CGFloat endAngle){
     
     CGMutablePathRef path = CGPathCreateMutable();
     CGFloat radiusOuter = radius;
@@ -77,8 +77,9 @@ static CGPathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat width, 
 
 @optional
 - (UIColor *)pieChart:(XYPieChart *)pieChart colorForSliceAtIndex:(NSUInteger)index;
-- (void)pieChart:(XYPieChart *)pieChart drawPieBackgroundInContext:(CGContextRef)ctx forBackgroundLayer:(CALayer *)backgroundLayer sliceLayer:(SliceLayer *)sliceLayer atIndex:(NSUInteger)index;
+- (void)pieChart:(XYPieChart *)pieChart renderPieBackgroundInContext:(CGContextRef)ctx forBackgroundLayer:(CALayer *)backgroundLayer sliceLayer:(SliceLayer *)sliceLayer atIndex:(NSUInteger)index;
 
+-(void)pieChart:(XYPieChart *)pieChart renderCenterInContext:(CGContextRef)ctx rect:(CGRect)bounds;
 
 - (NSString *)pieChart:(XYPieChart *)pieChart textForSliceAtIndex:(NSUInteger)index;
 @end
