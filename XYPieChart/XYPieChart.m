@@ -119,6 +119,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _labelRadius = _pieRadius/2;
         _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
         
+        CGFloat scale = [[UIScreen mainScreen] scale];
    
         _centerBackgroundLayer = [CALayer layer];
         _centerBackgroundLayer.contentsGravity = kCAGravityResizeAspectFill;
@@ -126,7 +127,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         
         _centerContentLayer = [CALayer layer];
         _centerContentLayer.contentsGravity = kCAGravityCenter;
-        
+        _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
         [_centerBackgroundLayer addSublayer:_centerContentLayer];
         
         [self.layer addSublayer:_centerBackgroundLayer];
