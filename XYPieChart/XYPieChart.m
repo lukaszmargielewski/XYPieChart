@@ -132,14 +132,6 @@ static NSUInteger kDefaultSliceZOrder = 100;
         
         [self.layer addSublayer:_centerBackgroundLayer];
         
-    
-        /*
-        _centerBackgroundLayer.borderWidth = 1.0;
-        _centerBackgroundLayer.borderColor = [UIColor colorWithRed:0.0 green:1.0 blue:0.0 alpha:0.5].CGColor;
-        
-        _centerContentLayer.borderWidth = 2.0;
-        _centerContentLayer.borderColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.5].CGColor;
-        */
         _showLabel = YES;
         _showPercentage = YES;
     }
