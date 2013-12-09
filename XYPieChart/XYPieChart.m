@@ -174,7 +174,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         
         CGRect bounds = [[self layer] bounds];
         self.pieRadius = MIN(bounds.size.width/2, bounds.size.height/2) - 10;
-        self.pieRadiusInner = 0;
+        self.pieRadiusInner = 5.0;
         
         self.pieCenter = CGPointMake(bounds.size.width/2, bounds.size.height/2);
         self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
@@ -237,15 +237,35 @@ static NSUInteger kDefaultSliceZOrder = 100;
 #pragma mark - Pie Reload Data With Animation
 
 - (void)reloadData{
-    if (_dataSource){
-        CALayer *parentLayer = [self pieParentLayer];
+    
+    CALayer *parentLayer = [self pieParentLayer];
+    
+    _selectedSliceIndex = -1;
+    [_sliceLayers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        SliceLayer *layer = (SliceLayer *)obj;
         
-        _selectedSliceIndex = -1;
-        [_sliceLayers enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-            SliceLayer *layer = (SliceLayer *)obj;
-            if(layer.isSelected)
-                [self setSliceDeselectedAtIndex:idx];
-        }];
+        layer.backgroundRenderer.pieChart = nil;
+        layer.backgroundRenderer = nil;
+        
+        //if(layer.isSelected)
+        [layer.mask removeFromSuperlayer];
+        layer.mask = nil;
+        
+        //  [self setSliceDeselectedAtIndex:idx];
+        [layer.backgroundLayer removeFromSuperlayer];
+        [layer removeFromSuperlayer];
+    }];
+    
+    for (CALayer *layer in parentLayer.sublayers) {
+        layer.delegate = nil;
+        [layer removeFromSuperlayer];
+    }
+    
+    [_sliceLayers removeAllObjects];
+    
+    
+    
+    if (_dataSource){
         
         double startToAngle = 0.0;
         double endToAngle = startToAngle;
@@ -381,6 +401,10 @@ static NSUInteger kDefaultSliceZOrder = 100;
         
         for(SliceLayer *layer in layersToRemove)
         {
+            layer.backgroundRenderer.pieChart = nil;
+            layer.backgroundRenderer = nil;
+            [layer.backgroundLayer removeFromSuperlayer];
+            
             [layer setFillColor:[self backgroundColor].CGColor];
             [layer setDelegate:nil];
             [layer.backgroundLayer setZPosition:0];
@@ -391,6 +415,8 @@ static NSUInteger kDefaultSliceZOrder = 100;
         [layersToRemove enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
             SliceLayer *lay = (SliceLayer *)obj;
             
+            lay.backgroundRenderer.pieChart = nil;
+            lay.backgroundRenderer = nil;
             [lay.backgroundLayer removeFromSuperlayer];
             [_sliceLayers removeObject:lay];
 //            [lay removeFromSuperlayer];
@@ -569,6 +595,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
     maskedLayer.frame = [self pieParentLayer].bounds;
     [maskedLayer setZPosition:0];
     [maskedLayer setNeedsDisplayOnBoundsChange:YES];
+    //pieLayer.masksToBounds = maskedLayer.masksToBounds = YES;
     //[maskedLayer addSublayer:pieLayer];
     [maskedLayer setMask:pieLayer];
     
@@ -581,9 +608,16 @@ static NSUInteger kDefaultSliceZOrder = 100;
     //maskedLayer.borderColor = [UIColor whiteColor].CGColor;
     maskedLayer.backgroundColor = [UIColor clearColor].CGColor;
     maskedLayer.delegate = renderer;
+    maskedLayer.contentsScale = pieLayer.contentsScale = [[UIScreen mainScreen] scale];
+    
+    [maskedLayer setNeedsDisplayOnBoundsChange:YES];
+    [pieLayer setNeedsDisplayOnBoundsChange:YES];
+    
+    [pieLayer setNeedsDisplay];
     [maskedLayer setNeedsDisplay];
     
-    
+    //maskedLayer.borderWidth = 1.0;
+    //pieLayer.borderWidth = 1.0;
     return pieLayer;
 }
 
@@ -616,7 +650,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
 
 @synthesize pieChart = _pieChart;
 @synthesize sliceLayer = _sliceLayer;
-
+  
 
 -(void)drawLayer:(CALayer *)layer inContext:(CGContextRef)ctx{
 
