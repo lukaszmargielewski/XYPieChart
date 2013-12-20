@@ -193,40 +193,45 @@ static NSUInteger kDefaultSliceZOrder = 100;
     
     if (_dataSource){
         
-        __block double startToAngle = 0.0;
-        __block double endToAngle = startToAngle;
         
-        NSUInteger sliceCount = [_dataSource numberOfSlicesInPieChart:self];
-        
-        double sum = 0.0;
-        double values[sliceCount];
-        
-        NSMutableArray *colors = [[NSMutableArray alloc] initWithCapacity:sliceCount];
-        
-        // 1. values and colors"
-        for (int index = 0; index < sliceCount; index++) {
-            
-            colors[index] = [_dataSource pieChart:self colorForSliceAtIndex:index];
-            values[index] = [_dataSource pieChart:self valueForSliceAtIndex:index];
-            sum += values[index];
-        }
-        double angles[sliceCount];
-        
-        // 2. Calculate angles from exisiting values:
-        for (int index = 0; index < sliceCount; index++) {
-            double div;
-            if (sum == 0)
-                div = 0;
-            else
-                div = values[index] / sum;
-            angles[index] = M_PI * 2 * div;
-        }
-        
+      
         
         // 3. Prepare graphics context:
         
-       // dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 
+            __block double startToAngle = 0.0;
+            __block double endToAngle = startToAngle;
+            
+            NSUInteger sliceCount = [_dataSource numberOfSlicesInPieChart:self];
+            
+            double sum = 0.0;
+            
+            double *values = malloc(sliceCount * sizeof(double));
+            double *angles = malloc(sliceCount * sizeof(double));
+            
+            NSMutableArray *colors = [[NSMutableArray alloc] initWithCapacity:sliceCount];
+            
+            // 1. values and colors"
+            for (int index = 0; index < sliceCount; index++) {
+                
+                colors[index] = [_dataSource pieChart:self colorForSliceAtIndex:index];
+                values[index] = [_dataSource pieChart:self valueForSliceAtIndex:index];
+                sum += values[index];
+            }
+            
+            
+            // 2. Calculate angles from exisiting values:
+            for (int index = 0; index < sliceCount; index++) {
+                double div;
+                if (sum == 0)
+                    div = 0;
+                else
+                    div = values[index] / sum;
+                angles[index] = M_PI * 2 * div;
+            }
+        
+            
             UIGraphicsBeginImageContextWithOptions(parentLayer.bounds.size, NO, 0);
             
             CGContextRef ctx = UIGraphicsGetCurrentContext();
@@ -285,13 +290,17 @@ static NSUInteger kDefaultSliceZOrder = 100;
             UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
             UIGraphicsEndImageContext();
             
-           // dispatch_sync(dispatch_get_main_queue(), ^{
+            dispatch_sync(dispatch_get_main_queue(), ^{
                 
                 parentLayer.contents = (id)image.CGImage;
-         //   });
+                
+            });
+            
+            free(values);
+            free(angles);
 
             
-       // });
+        });
         
         
         
