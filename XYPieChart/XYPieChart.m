@@ -205,6 +205,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         
         // 1. values and colors"
         for (int index = 0; index < sliceCount; index++) {
+            
             colors[index] = [_dataSource pieChart:self colorForSliceAtIndex:index];
             values[index] = [_dataSource pieChart:self valueForSliceAtIndex:index];
             sum += values[index];
@@ -233,16 +234,21 @@ static NSUInteger kDefaultSliceZOrder = 100;
             for(int index = 0; index < sliceCount; index ++){
                 
                 double angle = angles[index];
+                double startFromAngle = _startPieAngle + endToAngle;
                 endToAngle += angle;
-                double startFromAngle = _startPieAngle + startToAngle;
                 double endFromAngle = _startPieAngle + endToAngle;
                 
-                [self renderPieInContext:ctx fromAngle:startFromAngle toAngleAngleEnd:endFromAngle withColor:colors[index]];
+                UIColor *color = colors[index];
+                
+                //DLog(@"chart: %i. pie: %i angle start: %.1f, angle end: %.1f color(%.2f, %.2f, %.2f, %.2f)", self.tag, index, startFromAngle, endFromAngle, [color red], [color green], [color blue], [color alpha]);
+                
+                [self renderPieInContext:ctx fromAngle:startFromAngle toAngleAngleEnd:endFromAngle withColor:color];
                 
             }
         
         
         // Draw marks:
+        {
         CGContextSetStrokeColorWithColor(ctx, [UIColor clearColor].CGColor );
         
         CGContextSetBlendMode(ctx, kCGBlendModeClear);
@@ -272,8 +278,10 @@ static NSUInteger kDefaultSliceZOrder = 100;
         CGContextAddPath(ctx, pathMarks);
         CGContextStrokePath(ctx);
         CGPathRelease(pathMarks);
+        }
         
-            
+        // End drawing marks...
+        
             UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
             UIGraphicsEndImageContext();
             
