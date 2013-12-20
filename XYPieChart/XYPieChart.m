@@ -92,7 +92,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         [self addSubview:_pieView];
         
 
-        _startPieAngle = 0;//M_PI_2*3;
+        _startPieAngle = -M_PI_2;
         _selectedSliceStroke = 3.0;
         
         self.pieRadius = MIN(frame.size.width/2, frame.size.height/2) - 10;
@@ -141,7 +141,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         [self insertSubview:_pieView atIndex:0];
         
         _animationSpeed = 0.5;
-        _startPieAngle = 0;//M_PI_2*3;
+        _startPieAngle = 0;
         _selectedSliceStroke = 3.0;
         
         CGRect bounds = [[self layer] bounds];
@@ -200,8 +200,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 
-            __block double startToAngle = 0.0;
-            __block double endToAngle = startToAngle;
+    
             
             NSUInteger sliceCount = [_dataSource numberOfSlicesInPieChart:self];
             
@@ -236,18 +235,20 @@ static NSUInteger kDefaultSliceZOrder = 100;
             
             CGContextRef ctx = UIGraphicsGetCurrentContext();
             // 4. Draw loop:
+            double startFromAngle =_startPieAngle;
+            
             for(int index = 0; index < sliceCount; index ++){
                 
                 double angle = angles[index];
-                double startFromAngle = _startPieAngle + endToAngle;
-                endToAngle += angle;
-                double endFromAngle = _startPieAngle + endToAngle;
+                double endFromAngle = startFromAngle + angle;
                 
                 UIColor *color = colors[index];
                 
                 //DLog(@"chart: %i. pie: %i angle start: %.1f, angle end: %.1f color(%.2f, %.2f, %.2f, %.2f)", self.tag, index, startFromAngle, endFromAngle, [color red], [color green], [color blue], [color alpha]);
                 
                 [self renderPieInContext:ctx fromAngle:startFromAngle toAngleAngleEnd:endFromAngle withColor:color];
+                
+                startFromAngle = endFromAngle;
                 
             }
         
