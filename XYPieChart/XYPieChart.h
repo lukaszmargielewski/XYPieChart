@@ -37,6 +37,8 @@
 @property (nonatomic, weak)     XYPieChart *pieChart;
 @property (nonatomic, weak)     SliceLayer *sliceLayer;
 
+-(void)renderpieChart:(XYPieChart *)pieChart inLayer:(CALayer *)layer;
+
 @end
 
 
@@ -52,8 +54,6 @@
 @property (nonatomic, strong) CALayer *backgroundLayer;
 @property (nonatomic, strong) CARadialGradientRenderer *backgroundRenderer;
 
-
-- (void)createArcAnimationForKey:(NSString *)key fromValue:(NSNumber *)from toValue:(NSNumber *)to Delegate:(id)delegate;
 @end
 
 static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat width, CGFloat startAngle, CGFloat endAngle){
@@ -78,8 +78,6 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 
 @optional
 - (UIColor *)pieChart:(XYPieChart *)pieChart colorForSliceAtIndex:(NSUInteger)index;
-- (void)pieChart:(XYPieChart *)pieChart renderPieBackgroundInContext:(CGContextRef)ctx forBackgroundLayer:(CALayer *)backgroundLayer sliceLayer:(SliceLayer *)sliceLayer atIndex:(NSUInteger)index;
-
 - (NSString *)pieChart:(XYPieChart *)pieChart textForSliceAtIndex:(NSUInteger)index;
 @end
 
@@ -99,6 +97,7 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property(nonatomic, assign) CGFloat animationSpeed;
 @property(nonatomic, assign) CGPoint pieCenter;
 @property(nonatomic, assign) CGFloat pieRadius;
+@property(nonatomic, assign) CGFloat pieAnlgeStep;
 @property(nonatomic, assign) CGFloat pieRadiusInner;
 @property(nonatomic, assign) BOOL    showLabel;
 @property(nonatomic, strong) UIFont  *labelFont;
@@ -114,7 +113,6 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property (nonatomic, readonly) CALayer *centerBackgroundLayer;
 @property (nonatomic, readonly) CALayer *centerContentLayer;
 
-@property (nonatomic, readonly)  NSMutableArray *pieLayers;
 
 - (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius;
 - (void)reloadData;
