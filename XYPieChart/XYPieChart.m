@@ -373,7 +373,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
     // Normalise the 0-1 ranged inputs to the width of the image
     
     // Draw it!
-    CGContextDrawRadialGradient (ctx, myGradient, center, radius_inner, center, radius, kCGGradientDrawsBeforeStartLocation);
+    CGContextDrawRadialGradient (ctx, myGradient, center, radius_inner, center, radius, 0);//kCGGradientDrawsBeforeStartLocation
     
     
     // Clean up
