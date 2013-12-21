@@ -86,6 +86,9 @@ static NSUInteger kDefaultSliceZOrder = 100;
     self = [super initWithFrame:frame];
     if (self)
     {
+        
+        _renderer  = [[CARadialGradientRenderer alloc] init];
+        
         self.backgroundColor = [UIColor clearColor];
         _pieView = [[UIView alloc] initWithFrame:frame];
         [_pieView setBackgroundColor:[UIColor clearColor]];
@@ -106,16 +109,20 @@ static NSUInteger kDefaultSliceZOrder = 100;
         CGFloat scale = [[UIScreen mainScreen] scale];
    
         _centerBackgroundLayer = [CALayer layer];
+        
         _centerBackgroundLayer.contentsGravity = kCAGravityResizeAspectFill;
         _centerBackgroundLayer.contents = (id)[UIImage imageNamed:@"pie_center.png"].CGImage;
         
         _centerContentLayer = [CALayer layer];
+    
         _centerContentLayer.contentsGravity = kCAGravityCenter;
         _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
         [_centerBackgroundLayer addSublayer:_centerContentLayer];
         
+        _centerContentLayer.delegate =  _pieView.layer.delegate = _centerBackgroundLayer.delegate = _renderer;
+        
         [self.layer addSublayer:_centerBackgroundLayer];
-        _renderer  = [[CARadialGradientRenderer alloc] init];
+        
         _showLabel = YES;
         _showPercentage = YES;
     }
@@ -139,7 +146,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _pieView = [[UIView alloc] initWithFrame:self.bounds];
         [_pieView setBackgroundColor:[UIColor clearColor]];
         [self insertSubview:_pieView atIndex:0];
-        
+        _pieView.layer.delegate = self;
         _animationSpeed = 0.5;
         _startPieAngle = 0;
         _selectedSliceStroke = 3.0;
@@ -293,8 +300,9 @@ static NSUInteger kDefaultSliceZOrder = 100;
             
             dispatch_sync(dispatch_get_main_queue(), ^{
                 
+                [CATransaction setDisableActions:YES];
                 parentLayer.contents = (id)image.CGImage;
-                
+                [CATransaction commit];
             });
             
             free(values);
@@ -416,5 +424,9 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize pieChart = _pieChart;
 @synthesize sliceLayer = _sliceLayer;
 
+
+- (id<CAAction>)actionForLayer:(CALayer *)layer forKey:(NSString *)key {
+    return [NSNull null];
+}
 
 @end
