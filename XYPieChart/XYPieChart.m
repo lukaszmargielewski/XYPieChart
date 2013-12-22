@@ -119,8 +119,16 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
         [_centerBackgroundLayer addSublayer:_centerContentLayer];
         
-        _centerContentLayer.delegate =  _pieView.layer.delegate = _centerBackgroundLayer.delegate = _renderer;
+        //_centerContentLayer.delegate =  _pieView.layer.delegate = _centerBackgroundLayer.delegate = _renderer;
         
+        /*
+        CABasicAnimation* fadeAnim = [CABasicAnimation animationWithKeyPath:@"contents"];
+        fadeAnim.fromValue = [NSNumber numberWithFloat:1.0];
+        fadeAnim.toValue = [NSNumber numberWithFloat:0.0];
+        fadeAnim.duration = 5.0;
+        [_pieView.layer addAnimation:fadeAnim forKey:@"contents"];
+        [_centerContentLayer addAnimation:fadeAnim forKey:@"contents"];
+        */
         [self.layer addSublayer:_centerBackgroundLayer];
         
         _showLabel = YES;
@@ -425,8 +433,26 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize sliceLayer = _sliceLayer;
 
 
+ 
+ - (id<CAAction>)actionForLayer:(CALayer *)theLayer
+ forKey:(NSString *)theKey {
+ CATransition *theAnimation=nil;
+ 
+ if ([theKey isEqualToString:@"contents"]) {
+ 
+ theAnimation = [[CATransition alloc] init];
+ theAnimation.duration = 1.0;
+ theAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseIn];
+ theAnimation.type = kCATransitionFade;
+ //theAnimation.subtype = kCATransitionFade;
+ }
+ return theAnimation;
+ }
+ 
+/*
 - (id<CAAction>)actionForLayer:(CALayer *)layer forKey:(NSString *)key {
     return [NSNull null];
 }
+ */
 
 @end
