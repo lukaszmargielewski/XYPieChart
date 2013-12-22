@@ -80,7 +80,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize selectedSliceStroke = _selectedSliceStroke;
 @synthesize selectedSliceOffsetRadius = _selectedSliceOffsetRadius;
 @synthesize showPercentage = _showPercentage;
-
+@synthesize name = _name;
 
 - (id)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
@@ -201,6 +201,14 @@ static NSUInteger kDefaultSliceZOrder = 100;
 
 #pragma mark - Pie Reload Data With Animation
 
+- (void)clear{
+
+    CALayer *parentLayer = [self pieParentLayer];
+    [CATransaction setDisableActions:YES];
+    parentLayer.contents = nil;
+    _centerContentLayer.contents = nil;
+    [CATransaction commit];
+}
 - (void)reloadData{
     
     CALayer *parentLayer = [self pieParentLayer];
@@ -208,14 +216,12 @@ static NSUInteger kDefaultSliceZOrder = 100;
     
     if (_dataSource){
         
-        
-      
-        
+    
         // 3. Prepare graphics context:
         
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-
-    
+        dispatch_queue_t queue = [_dataSource renderQueueForPieChart:self];
+        
+        dispatch_async(queue, ^{
             
             NSUInteger sliceCount = [_dataSource numberOfSlicesInPieChart:self];
             

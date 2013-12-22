@@ -79,6 +79,8 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @optional
 - (UIColor *)pieChart:(XYPieChart *)pieChart colorForSliceAtIndex:(NSUInteger)index;
 - (NSString *)pieChart:(XYPieChart *)pieChart textForSliceAtIndex:(NSUInteger)index;
+-(dispatch_queue_t)renderQueueForPieChart:(XYPieChart *)pieChart;
+
 @end
 
 @protocol XYPieChartDelegate <NSObject>
@@ -112,12 +114,12 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property (nonatomic, readonly) CATextLayer *centerValueSubtitleLayer;
 @property (nonatomic, readonly) CALayer *centerBackgroundLayer;
 @property (nonatomic, readonly) CALayer *centerContentLayer;
-
+@property (nonatomic, strong) NSString *name;
 
 - (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius;
 - (void)reloadData;
 - (void)setPieBackgroundColor:(UIColor *)color;
-
+- (void)clear;
 - (void)setSliceSelectedAtIndex:(NSInteger)index;
 - (void)setSliceDeselectedAtIndex:(NSInteger)index;
 
