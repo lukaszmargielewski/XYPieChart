@@ -402,6 +402,8 @@ static NSUInteger kDefaultSliceZOrder = 100;
     CGColorSpaceRelease(myColorspace); // Necessary?
     CGGradientRelease(myGradient); // Necessary?
     CGPathRelease(path);
+    free(components);
+    free(locations);
     
     
     CGContextRestoreGState(ctx);
