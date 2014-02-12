@@ -116,7 +116,6 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property (nonatomic, readonly) CALayer *centerContentLayer;
 @property (nonatomic, strong) NSString *name;
 
-- (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius;
 - (void)reloadData;
 - (void)setPieBackgroundColor:(UIColor *)color;
 - (void)clear;

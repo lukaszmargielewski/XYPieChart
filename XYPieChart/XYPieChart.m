@@ -60,6 +60,7 @@
     CARadialGradientRenderer *_renderer;
     
 
+    CGSize centerSugestedSize;
 }
 
 static NSUInteger kDefaultSliceZOrder = 100;
@@ -94,11 +95,15 @@ static NSUInteger kDefaultSliceZOrder = 100;
         [_pieView setBackgroundColor:[UIColor clearColor]];
         [self addSubview:_pieView];
         
+        UIImage *ci = [UIImage imageNamed:@"pie_center.png"];
+        centerSugestedSize = ci.size;
+        
 
         _startPieAngle = -M_PI_2;
         _selectedSliceStroke = 3.0;
         
-        self.pieRadius = MIN(frame.size.width/2, frame.size.height/2) - 10;
+        self.pieRadius = centerSugestedSize.width / 2.0 + 6.0;
+        self.pieRadiusInner = 5.0;
         self.pieCenter = CGPointMake(frame.size.width/2, frame.size.height/2);
         self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
         _labelColor = [UIColor whiteColor];
@@ -110,8 +115,9 @@ static NSUInteger kDefaultSliceZOrder = 100;
    
         _centerBackgroundLayer = [CALayer layer];
         
-        _centerBackgroundLayer.contentsGravity = kCAGravityResizeAspectFill;
-       // _centerBackgroundLayer.contents = (id)[UIImage imageNamed:@"pie_center.png"].CGImage;
+        _centerBackgroundLayer.contentsGravity = kCAGravityCenter;
+        
+        _centerBackgroundLayer.contents = (id)ci.CGImage;
         
         _centerContentLayer = [CALayer layer];
     
@@ -119,16 +125,6 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
         [_centerBackgroundLayer addSublayer:_centerContentLayer];
         
-        //_centerContentLayer.delegate =  _pieView.layer.delegate = _centerBackgroundLayer.delegate = _renderer;
-        
-        /*
-        CABasicAnimation* fadeAnim = [CABasicAnimation animationWithKeyPath:@"contents"];
-        fadeAnim.fromValue = [NSNumber numberWithFloat:1.0];
-        fadeAnim.toValue = [NSNumber numberWithFloat:0.0];
-        fadeAnim.duration = 5.0;
-        [_pieView.layer addAnimation:fadeAnim forKey:@"contents"];
-        [_centerContentLayer addAnimation:fadeAnim forKey:@"contents"];
-        */
         [self.layer addSublayer:_centerBackgroundLayer];
         
         _showLabel = YES;
@@ -137,43 +133,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
     return self;
 }
 
-- (id)initWithFrame:(CGRect)frame Center:(CGPoint)center Radius:(CGFloat)radius{
-    self = [self initWithFrame:frame];
-    if (self)
-    {
-        self.pieCenter = center;
-        self.pieRadius = radius;
-    }
-    return self;
-}
 
-- (id)initWithCoder:(NSCoder *)aDecoder{
-    self = [super initWithCoder:aDecoder];
-    if(self)
-    {
-        _pieView = [[UIView alloc] initWithFrame:self.bounds];
-        [_pieView setBackgroundColor:[UIColor clearColor]];
-        [self insertSubview:_pieView atIndex:0];
-        _pieView.layer.delegate = self;
-        _animationSpeed = 0.5;
-        _startPieAngle = 0;
-        _selectedSliceStroke = 3.0;
-        
-        CGRect bounds = [[self layer] bounds];
-        self.pieRadius = MIN(bounds.size.width/2, bounds.size.height/2) - 10;
-        self.pieRadiusInner = 5.0;
-        
-        self.pieCenter = CGPointMake(bounds.size.width/2, bounds.size.height/2);
-        self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
-        _labelColor = [UIColor whiteColor];
-        _labelRadius = _pieRadius/2;
-        _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
-        
-        _showLabel = YES;
-        _showPercentage = YES;
-    }
-    return self;
-}
 
 - (void)setPieCenter:(CGPoint)pieCenter{
     [_pieView setCenter:pieCenter];
