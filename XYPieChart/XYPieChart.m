@@ -111,7 +111,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         _centerBackgroundLayer = [CALayer layer];
         
         _centerBackgroundLayer.contentsGravity = kCAGravityResizeAspectFill;
-        _centerBackgroundLayer.contents = (id)[UIImage imageNamed:@"pie_center.png"].CGImage;
+       // _centerBackgroundLayer.contents = (id)[UIImage imageNamed:@"pie_center.png"].CGImage;
         
         _centerContentLayer = [CALayer layer];
     
@@ -423,7 +423,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
     CGFloat W = CGRectGetWidth(self.bounds);
     CGFloat w = W - 2.0 * mx;
     
-    CGRect f = CGRectMake(mx + 1, mx + 1, w - 2, w - 2);
+    CGRect f = CGRectIntegral(CGRectMake(mx + 1, mx + 1, w - 2, w - 2));
     
    
     _centerBackgroundLayer.frame = f;
