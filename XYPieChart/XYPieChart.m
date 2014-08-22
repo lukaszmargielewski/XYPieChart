@@ -304,7 +304,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
     float width             = _pieRadiusInner;
     float radius_inner      = (radius - width);
     
-    ////DLog(@"Rendering for width: %.1f", width);
+    //DLog(@"Rendering for width: %.1f", width);
     CGPathRef path = CGPathCreateArc(center, radius, _pieRadiusInner, angleStart, angleEnd);
     
     
