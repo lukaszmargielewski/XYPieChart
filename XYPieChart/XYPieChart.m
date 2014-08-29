@@ -63,8 +63,6 @@
     CGSize centerSugestedSize;
 }
 
-static NSUInteger kDefaultSliceZOrder = 100;
-
 @synthesize dataSource = _dataSource;
 @synthesize delegate = _delegate;
 @synthesize startPieAngle = _startPieAngle;
@@ -83,56 +81,70 @@ static NSUInteger kDefaultSliceZOrder = 100;
 @synthesize showPercentage = _showPercentage;
 @synthesize name = _name;
 
+-(id)initWithCoder:(NSCoder *)aDecoder{
+
+    self = [super initWithCoder:aDecoder];
+    
+    if (self) {
+        [self commonInit];
+    }
+    return self;
+}
 - (id)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
     if (self)
     {
         
-        _renderer  = [[CARadialGradientRenderer alloc] init];
-        
-        self.backgroundColor = [UIColor clearColor];
-        _pieView = [[UIView alloc] initWithFrame:frame];
-        [_pieView setBackgroundColor:[UIColor clearColor]];
-        [self addSubview:_pieView];
-        
-        UIImage *ci = [UIImage imageNamed:@"pie_center.png"];
-        centerSugestedSize = ci.size;
-        
-
-        _startPieAngle = -M_PI_2;
-        _selectedSliceStroke = 3.0;
-        
-        self.pieRadius = centerSugestedSize.width / 2.0 + 6.0;
-        self.pieRadiusInner = 5.0;
-        self.pieCenter = CGPointMake(frame.size.width/2, frame.size.height/2);
-        self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
-        _labelColor = [UIColor whiteColor];
-        _labelRadius = _pieRadius/2;
-        _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
-        _pieAnlgeStep = (M_PI_2 / 3.0);
-        
-        CGFloat scale = [[UIScreen mainScreen] scale];
-   
-        _centerBackgroundLayer = [CALayer layer];
-        
-        _centerBackgroundLayer.contentsGravity = kCAGravityCenter;
-        
-        _centerBackgroundLayer.contents = (id)ci.CGImage;
-        
-        _centerContentLayer = [CALayer layer];
-    
-        _centerContentLayer.contentsGravity = kCAGravityCenter;
-        _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
-        [_centerBackgroundLayer addSublayer:_centerContentLayer];
-        
-        [self.layer addSublayer:_centerBackgroundLayer];
-        
-        _showLabel = YES;
-        _showPercentage = YES;
+        [self commonInit];
     }
     return self;
 }
+-(void)commonInit{
 
+    _renderer  = [[CARadialGradientRenderer alloc] init];
+    CGRect frame = self.bounds;
+    
+    self.backgroundColor = [UIColor clearColor];
+    _pieView = [[UIView alloc] initWithFrame:frame];
+    [_pieView setBackgroundColor:[UIColor clearColor]];
+    [self addSubview:_pieView];
+    
+    UIImage *ci = [MITheme imageNamed:
+                   @"pie_center.png"];
+    centerSugestedSize = ci.size;
+    
+    
+    _startPieAngle = -M_PI_2;
+    _selectedSliceStroke = 3.0;
+    
+    self.pieRadius = centerSugestedSize.width / 2.0 + 6.0;
+    self.pieRadiusInner = 5.0;
+    self.pieCenter = CGPointMake(frame.size.width/2, frame.size.height/2);
+    self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
+    _labelColor = [UIColor whiteColor];
+    _labelRadius = _pieRadius/2;
+    _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
+    _pieAnlgeStep = (M_PI_2 / 3.0);
+    
+    CGFloat scale = [[UIScreen mainScreen] scale];
+    
+    _centerBackgroundLayer = [CALayer layer];
+    
+    _centerBackgroundLayer.contentsGravity = kCAGravityCenter;
+    
+    _centerBackgroundLayer.contents = (id)ci.CGImage;
+    
+    _centerContentLayer = [CALayer layer];
+    
+    _centerContentLayer.contentsGravity = kCAGravityCenter;
+    _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
+    [_centerBackgroundLayer addSublayer:_centerContentLayer];
+    
+    [self.layer addSublayer:_centerBackgroundLayer];
+    
+    _showLabel = YES;
+    _showPercentage = YES;
+}
 
 
 - (void)setPieCenter:(CGPoint)pieCenter{
@@ -235,7 +247,7 @@ static NSUInteger kDefaultSliceZOrder = 100;
         
         
         // Draw marks:
-        {
+        if(_pieAnlgeStep){
         CGContextSetStrokeColorWithColor(ctx, [UIColor clearColor].CGColor );
         
         CGContextSetBlendMode(ctx, kCGBlendModeClear);
