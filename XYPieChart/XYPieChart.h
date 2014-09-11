@@ -114,6 +114,7 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property (nonatomic, readonly) CATextLayer *centerValueSubtitleLayer;
 @property (nonatomic, readonly) CALayer *centerBackgroundLayer;
 @property (nonatomic, readonly) CALayer *centerContentLayer;
+@property (nonatomic, readonly) UIView *pieView;
 @property (nonatomic, strong) NSString *name;
 
 - (void)reloadData;

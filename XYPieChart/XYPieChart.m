@@ -80,6 +80,7 @@
 @synthesize selectedSliceOffsetRadius = _selectedSliceOffsetRadius;
 @synthesize showPercentage = _showPercentage;
 @synthesize name = _name;
+@synthesize pieView = _pieView;
 
 -(id)initWithCoder:(NSCoder *)aDecoder{
 
@@ -109,9 +110,18 @@
     [_pieView setBackgroundColor:[UIColor clearColor]];
     [self addSubview:_pieView];
     
-    UIImage *ci = [MITheme imageNamed:
-                   @"pie_center.png"];
-    centerSugestedSize = ci.size;
+    UIImage *ci = nil;
+    float pieSize = [MITheme floatWithName:@"pie_chart_size"];
+    
+    if (pieSize < 1) {
+        
+        NSString *imm = [MITheme objectWithName:@"pie_chart_center_image"];
+        ci = [MITheme imageNamed:imm];
+        centerSugestedSize = ci.size;
+        
+    }else{
+    centerSugestedSize = CGSizeMake(pieSize,pieSize);
+    }
     
     
     _startPieAngle = -M_PI_2;
@@ -124,7 +134,6 @@
     _labelColor = [UIColor whiteColor];
     _labelRadius = _pieRadius/2;
     _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
-    _pieAnlgeStep = (M_PI_2 / 3.0);
     
     CGFloat scale = [[UIScreen mainScreen] scale];
     
@@ -401,7 +410,7 @@
     _centerBackgroundLayer.frame = f;
     _centerContentLayer.frame = _centerBackgroundLayer.bounds;
     _centerBackgroundLayer.cornerRadius = _centerContentLayer.cornerRadius = w/2;
-    
+    [self.layer setCornerRadius:_pieRadius];
     [self reloadData];
 }
 
