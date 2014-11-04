@@ -100,7 +100,8 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property(nonatomic, assign) CGPoint pieCenter;
 @property(nonatomic, assign) CGFloat pieRadius;
 @property(nonatomic, assign) CGFloat pieAnlgeStep;
-@property(nonatomic, assign) CGFloat pieRadiusInner;
+@property(nonatomic, assign) CGFloat pieWidth;
+@property(nonatomic, assign) CGFloat pieCenterPadding;
 @property(nonatomic, assign) BOOL    showLabel;
 @property(nonatomic, strong) UIFont  *labelFont;
 @property(nonatomic, strong) UIColor *labelColor;
