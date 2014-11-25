@@ -216,7 +216,12 @@
             // 1. values and colors"
             for (int index = 0; index < sliceCount; index++) {
                 
-                colors[index] = [_dataSource pieChart:self colorForSliceAtIndex:index];
+                
+                UIColor *color = [_dataSource pieChart:self colorForSliceAtIndex:index];
+                if (!color)
+                    color = [UIColor clearColor];
+                
+                colors[index] = color;
                 values[index] = [_dataSource pieChart:self valueForSliceAtIndex:index];
                 sum += values[index];
             }
