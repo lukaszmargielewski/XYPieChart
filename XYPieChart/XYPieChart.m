@@ -14,6 +14,7 @@
 @synthesize isSelected = _isSelected;
 @synthesize backgroundRenderer = _backgroundRenderer;
 
+
 - (NSString*)description{
     return [NSString stringWithFormat:@"value:%f, percentage:%0.0f, start:%f, end:%f", _value, _percentage, _startAngle/M_PI*180, _endAngle/M_PI*180];
 }
@@ -59,8 +60,6 @@
     UIView  *_pieView;
     CARadialGradientRenderer *_renderer;
     
-
-    CGSize centerSugestedSize;
 }
 
 @synthesize dataSource = _dataSource;
@@ -81,6 +80,7 @@
 @synthesize showPercentage = _showPercentage;
 @synthesize name = _name;
 @synthesize pieView = _pieView;
+@synthesize centerSugestedSize = _centerSugestedSize;
 
 -(id)initWithCoder:(NSCoder *)aDecoder{
 
@@ -113,7 +113,7 @@
     UIImage *ci     = [MITheme imageNamed:[MITheme objectWithName:@"pie_chart_center_image"]];
     float pieSize   = [MITheme floatWithName:@"pie_chart_size"];
     
-    centerSugestedSize = (pieSize < 1) ? ci.size : CGSizeMake(pieSize, pieSize);;
+    _centerSugestedSize = (pieSize < 1) ? ci.size : CGSizeMake(pieSize, pieSize);;
      
     
     
@@ -122,7 +122,7 @@
     
     self.pieWidth = 5.0;
     self.pieCenterPadding = 1.0;
-    self.pieRadius = (centerSugestedSize.width / 2.0) + _pieWidth + _pieCenterPadding;
+    self.pieRadius = (_centerSugestedSize.width / 2.0) + _pieWidth + _pieCenterPadding;
     
     self.pieCenter = CGPointMake(frame.size.width/2, frame.size.height/2);
     self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
@@ -137,9 +137,8 @@
     _centerBackgroundLayer.contents = (id)ci.CGImage;
     
     _centerContentLayer = [CALayer layer];
-    //_centerContentLayer.borderWidth = 1.0;
-    //_centerContentLayer.borderColor = [UIColor whiteColor].CGColor;
     _centerContentLayer.contentsGravity = kCAGravityCenter;
+    _centerContentLayer.masksToBounds = YES;
     _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
     [_centerBackgroundLayer addSublayer:_centerContentLayer];
     
