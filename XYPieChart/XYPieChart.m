@@ -70,6 +70,8 @@
 @synthesize pieRadius = _pieRadius;
 @synthesize pieWidth = _pieWidth;
 @synthesize pieAnlgeStep = _pieAnlgeStep;
+@synthesize pieSteps = _pieSteps;
+
 @synthesize showLabel = _showLabel;
 @synthesize labelFont = _labelFont;
 @synthesize labelColor = _labelColor;
@@ -173,6 +175,14 @@
 - (void)setShowPercentage:(BOOL)showPercentage{
     _showPercentage = showPercentage;
 }
+-(void)setPieAnlgeStep:(CGFloat)pieAnlgeStep{
+
+    _pieAnlgeStep = pieAnlgeStep;
+    
+    if (_pieAnlgeStep) {
+        _pieSteps = 0;
+    }
+}
 
 #pragma mark - Pie Reload Data With Animation
 
@@ -255,27 +265,30 @@
         
         
         // Draw marks:
-        if(_pieAnlgeStep){
+        if(_pieAnlgeStep || _pieSteps){
+            
+            if (_pieSteps) {
+                _pieAnlgeStep = (M_PI * 2.0) / _pieSteps;
+            }
+            CGFloat radius          = _pieRadius;
+            CGPoint center          = _pieCenter;
+            CGFloat width           = _pieWidth;
+            CGFloat radius_inner    = (radius - width);
+            CGFloat angle_step      = _pieAnlgeStep;
+            
+            
         CGContextSetStrokeColorWithColor(ctx, [UIColor clearColor].CGColor );
-        
         CGContextSetBlendMode(ctx, kCGBlendModeClear);
-        
+    
         CGMutablePathRef pathMarks = CGPathCreateMutable();
         
-        CGFloat radius = _pieRadius;
-        CGPoint center = _pieCenter;
-        
-        // Initialise
-        
-        float width             = _pieWidth;
-        float radius_inner      = (radius - width);
-        
-        float angle_step = _pieAnlgeStep;
-        
-        for (float angle = 0; angle <= M_PI * 2.0; angle += angle_step) {
+        for (CGFloat angle = -M_PI_2; angle <= M_PI * 1.5; angle += angle_step) {
             
-            CGPoint pInner = CGPointMake(center.x + radius_inner * cosf(angle), center.y + radius_inner * sinf(angle));
-            CGPoint pOuter = CGPointMake(center.x + radius * cosf(angle), center.y + radius * sinf(angle));
+            CGFloat sina = sinf(angle);
+            CGFloat cosa = cosf(angle);
+            
+            CGPoint pInner = CGPointMake(center.x + radius_inner    * cosa , center.y + radius_inner   * sina);
+            CGPoint pOuter = CGPointMake(center.x + radius          * cosa , center.y + radius         * sina);
             
             CGPathMoveToPoint(pathMarks, NULL, pInner.x, pInner.y);
             CGPathAddLineToPoint(pathMarks, NULL, pOuter.x, pOuter.y);
