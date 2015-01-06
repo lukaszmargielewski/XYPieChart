@@ -183,6 +183,15 @@
         _pieSteps = 0;
     }
 }
+-(void)setPieSteps:(CGFloat)pieSteps{
+
+    _pieSteps = pieSteps;
+    
+    if (_pieAnlgeStep) {
+        _pieAnlgeStep = (M_PI * 2.0) / _pieSteps;
+    }
+
+}
 
 #pragma mark - Pie Reload Data With Animation
 
@@ -267,9 +276,7 @@
         // Draw marks:
         if(_pieAnlgeStep || _pieSteps){
             
-            if (_pieSteps) {
-                _pieAnlgeStep = (M_PI * 2.0) / _pieSteps;
-            }
+        
             CGFloat radius          = _pieRadius;
             CGPoint center          = _pieCenter;
             CGFloat width           = _pieWidth;
