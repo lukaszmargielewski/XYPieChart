@@ -349,7 +349,7 @@
     CGFloat blu         = [color blue];
     
     CGFloat alpaStart    = [color alpha];
-    CGFloat alphaEnd     = alpaStart * 0.5;
+    CGFloat alphaEnd     = (_gradientFill) ? alpaStart * 0.5 : alpaStart;
     
     
     CGContextSaveGState(ctx);

@@ -112,6 +112,8 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property(nonatomic, assign) CGFloat selectedSliceOffsetRadius;
 @property(nonatomic, assign) BOOL    showPercentage;
 
+@property(nonatomic, assign) BOOL    gradientFill UI_APPEARANCE_SELECTOR;
+
 @property (nonatomic, readonly) CGSize centerSugestedSize;
 
 @property (nonatomic, readonly) CATextLayer *centerValueTitleLayer;
