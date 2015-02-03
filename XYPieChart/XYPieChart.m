@@ -270,7 +270,7 @@
         
         
         // Draw marks:
-        if(_pieAnlgeStep){
+        if(_pieAnlgeStep && _showsPieSteps){
             
         
             CGFloat radius          = _pieRadius;
