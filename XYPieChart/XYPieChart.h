@@ -112,8 +112,8 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
 @property(nonatomic, assign) CGFloat selectedSliceOffsetRadius;
 @property(nonatomic, assign) BOOL    showPercentage;
 
-@property(nonatomic, assign) BOOL    gradientFill UI_APPEARANCE_SELECTOR;
-@property(nonatomic, assign) BOOL    showsPieSteps UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) int    gradientFill UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) int    showsPieSteps UI_APPEARANCE_SELECTOR;
 
 @property (nonatomic, readonly) CGSize centerSugestedSize;
 
