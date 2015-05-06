@@ -109,6 +109,7 @@
     
     self.backgroundColor = [UIColor clearColor];
     _pieView = [[UIView alloc] initWithFrame:frame];
+    //_pieView.layer.contentsScale = [UIScreen mainScreen].scale;
     [_pieView setBackgroundColor:[UIColor clearColor]];
     [self addSubview:_pieView];
     
@@ -342,64 +343,80 @@
     
     //DLog(@"Rendering for width: %.1f", width);
     CGPathRef path = CGPathCreateArc(center, radius, _pieWidth, angleStart, angleEnd);
-    
-    
-    CGFloat red         = [color red];
-    CGFloat gre         = [color green];
-    CGFloat blu         = [color blue];
-    
-    CGFloat alpaStart    = [color alpha];
-    CGFloat alphaEnd     = (_gradientFill) ? alpaStart * 0.5 : alpaStart;
+   
     
     
     CGContextSaveGState(ctx);
     
     CGContextAddPath(ctx, path);
     CGContextClip(ctx);
-    // Render a radial background
-    // http://developer.apple.com/library/ios/#documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/dq_shadings/dq_shadings.html
     
     
-    // Create the gradient's colours:
-    size_t num_locations    = 3;
-    CGFloat *locations      = malloc(sizeof(CGFloat) * num_locations);
-    CGFloat *components     = malloc(sizeof(CGFloat) * num_locations * 4);
+
+    if (!_gradientFill) {
     
-    locations[0] = 0.0;
-    locations[1] = 0.5;
-    locations[2]  = 1.0;
-    
-    components[0 + 0] = red;
-    components[0 + 1] = gre;
-    components[0 + 2] = blu;
-    components[0 + 3] = alpaStart;
-    
-    components[4 + 0] = red;
-    components[4 + 1] = gre;
-    components[4 + 2] = blu;
-    components[4 + 3] = alpaStart;
-    
-    components[8 + 0] = red;
-    components[8 + 1] = gre;
-    components[8 + 2] = blu;
-    components[8 + 3] = alphaEnd;
+        CGContextSetFillColorWithColor(ctx, color.CGColor);
+        CGContextFillRect(ctx, CGRectMake(0, 0, radius * 2.0, radius * 2.0));
+        
+    }else{
     
     
-    CGColorSpaceRef myColorspace = CGColorSpaceCreateDeviceRGB();
-    CGGradientRef myGradient = CGGradientCreateWithColorComponents(myColorspace, components, locations, num_locations);
+        
+        // Render a radial background
+        // http://developer.apple.com/library/ios/#documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/dq_shadings/dq_shadings.html
+        
+        
+        CGFloat red         = [color red];
+        CGFloat gre         = [color green];
+        CGFloat blu         = [color blue];
+        
+        CGFloat alpaStart    = [color alpha];
+        CGFloat alphaEnd     = alpaStart * 0.5;
+        
+        // Create the gradient's colours:
+        size_t num_locations    = 3;
+        CGFloat *locations      = malloc(sizeof(CGFloat) * num_locations);
+        CGFloat *components     = malloc(sizeof(CGFloat) * num_locations * 4);
+        
+        locations[0] = 0.0;
+        locations[1] = 0.5;
+        locations[2]  = 1.0;
+        
+        components[0 + 0] = red;
+        components[0 + 1] = gre;
+        components[0 + 2] = blu;
+        components[0 + 3] = alpaStart;
+        
+        components[4 + 0] = red;
+        components[4 + 1] = gre;
+        components[4 + 2] = blu;
+        components[4 + 3] = alpaStart;
+        
+        components[8 + 0] = red;
+        components[8 + 1] = gre;
+        components[8 + 2] = blu;
+        components[8 + 3] = alphaEnd;
+        
+        
+        CGColorSpaceRef myColorspace = CGColorSpaceCreateDeviceRGB();
+        CGGradientRef myGradient = CGGradientCreateWithColorComponents(myColorspace, components, locations, num_locations);
+        
+        // Normalise the 0-1 ranged inputs to the width of the image
+        
+        // Draw it!
+        CGContextDrawRadialGradient (ctx, myGradient, center, radius_inner, center, radius, 0);//kCGGradientDrawsBeforeStartLocation
+        
+        
+        // Clean up
+        CGColorSpaceRelease(myColorspace); // Necessary?
+        CGGradientRelease(myGradient); // Necessary?
+        CGPathRelease(path);
+        free(components);
+        free(locations);
+        
+        
+    }
     
-    // Normalise the 0-1 ranged inputs to the width of the image
-    
-    // Draw it!
-    CGContextDrawRadialGradient (ctx, myGradient, center, radius_inner, center, radius, 0);//kCGGradientDrawsBeforeStartLocation
-    
-    
-    // Clean up
-    CGColorSpaceRelease(myColorspace); // Necessary?
-    CGGradientRelease(myGradient); // Necessary?
-    CGPathRelease(path);
-    free(components);
-    free(locations);
     
     
     CGContextRestoreGState(ctx);
