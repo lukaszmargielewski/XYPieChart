@@ -1,11 +1,8 @@
-
 #import "XYPieChart.h"
 #import <QuartzCore/QuartzCore.h>
-#import "UIColor-Expanded.h"
-
-
 
 @implementation SliceLayer
+
 @synthesize text = _text;
 @synthesize value = _value;
 @synthesize percentage = _percentage;
@@ -113,10 +110,9 @@
     [_pieView setBackgroundColor:[UIColor clearColor]];
     [self addSubview:_pieView];
     
-    UIImage *ci     = [MITheme imageNamed:[MITheme objectWithName:@"pie_chart_center_image"]];
-    float pieSize   = [MITheme floatWithName:@"pie_chart_size"];
+    float pieSize   = MIN(self.bounds.size.width, self.bounds.size.height) / 2.0;
     
-    _centerSugestedSize = (pieSize < 1) ? ci.size : CGSizeMake(pieSize, pieSize);;
+    _centerSugestedSize = CGSizeMake(pieSize, pieSize);
      
     
     
@@ -137,7 +133,6 @@
     
     _centerBackgroundLayer = [CALayer layer];
     _centerBackgroundLayer.contentsGravity = (scale > 2) ? kCAGravityResizeAspectFill : kCAGravityCenter;
-    _centerBackgroundLayer.contents = (id)ci.CGImage;
     
     _centerContentLayer = [CALayer layer];
     _centerContentLayer.contentsGravity = kCAGravityCenter;
@@ -365,12 +360,14 @@
         // Render a radial background
         // http://developer.apple.com/library/ios/#documentation/GraphicsImaging/Conceptual/drawingwithquartz2d/dq_shadings/dq_shadings.html
         
+       const CGFloat *comps = CGColorGetComponents(color.CGColor);
         
-        CGFloat red         = [color red];
-        CGFloat gre         = [color green];
-        CGFloat blu         = [color blue];
+        CGFloat red         = comps[0];
+        CGFloat gre         = comps[1];
+        CGFloat blu         = comps[2];
         
-        CGFloat alpaStart    = [color alpha];
+        CGFloat alpaStart    = comps[3];
+        
         CGFloat alphaEnd     = alpaStart * 0.5;
         
         // Create the gradient's colours:
