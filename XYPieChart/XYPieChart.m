@@ -110,8 +110,8 @@
     [_pieView setBackgroundColor:[UIColor clearColor]];
     [self addSubview:_pieView];
     
-    float pieSize   = MIN(self.bounds.size.width, self.bounds.size.height) / 2.0;
-    
+    CGFloat A = MIN(self.bounds.size.width, self.bounds.size.height);
+    float pieSize   = A / (sqrt(2.0f));
     _centerSugestedSize = CGSizeMake(pieSize, pieSize);
      
     
