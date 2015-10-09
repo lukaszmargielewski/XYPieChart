@@ -70,8 +70,9 @@
     
     if (_pieRadius == 0) {
        _pieRadius = MIN(CGRectGetWidth(frame), CGRectGetHeight(frame)) / 2.0;
-        [self recalculateLayoutWithReload:NO];
     }
+    
+    [self recalculateLayoutWithReload:NO];
 }
 - (void)recalculateLayoutWithReload:(BOOL)reload{
 
@@ -95,7 +96,7 @@
     _renderCenter = CGPointMake(w2, w2);
     
     
-    CGFloat pieSize     = radiusInner / (sqrt(2.0f));
+    CGFloat pieSize     = wOuter / sqrt(2.0f);
     _centerSugestedSize = CGSizeMake(pieSize, pieSize);
                                          
     [_pieLayer setFrame:_pieOuterFrame];
