@@ -423,7 +423,7 @@
     CGFloat angleDiff = ABS(angleEnd - angleStart);
     
     // Draw marks:
-    if(YES && angleDiff < M_PI * 2.0){
+    if(_valueSeparatorLineWidth > 0 && angleDiff < M_PI * 2.0){
         
         
         CGFloat radius          = _pieRadius;
@@ -458,7 +458,7 @@
         CGPathAddLineToPoint(pathMarks, NULL, pOuter.x, pOuter.y);
 
         
-        CGContextSetLineWidth(ctx, 2.0);
+        CGContextSetLineWidth(ctx, _valueSeparatorLineWidth);
         CGContextAddPath(ctx, pathMarks);
         CGContextStrokePath(ctx);
         CGPathRelease(pathMarks);
