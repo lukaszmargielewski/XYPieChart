@@ -11,6 +11,9 @@
     CGSize _renderPieSize;
     CGPoint _renderCenter;
     
+    NSUInteger _sliceCount;
+    NSUInteger _nonZeroValues;
+    
 }
 
 @synthesize centerSugestedSize = _centerSugestedSize;
@@ -203,17 +206,18 @@
         
         dispatch_async(queue, ^{
             
-            NSUInteger sliceCount = [_dataSource numberOfSlicesInPieChart:self];
+            _sliceCount = [_dataSource numberOfSlicesInPieChart:self];
             
             double sum = 0.0;
+            _nonZeroValues = 0;
             
-            double *values = malloc(sliceCount * sizeof(double));
-            double *angles = malloc(sliceCount * sizeof(double));
+            double *values = malloc(_sliceCount * sizeof(double));
+            double *angles = malloc(_sliceCount * sizeof(double));
             
-            NSMutableArray *colors = [[NSMutableArray alloc] initWithCapacity:sliceCount];
+            NSMutableArray *colors = [[NSMutableArray alloc] initWithCapacity:_sliceCount];
             
             // 1. values and colors"
-            for (int index = 0; index < sliceCount; index++) {
+            for (int index = 0; index < _sliceCount; index++) {
                 
                 
                 UIColor *color = [_dataSource pieChart:self colorForSliceAtIndex:index];
@@ -221,13 +225,19 @@
                     color = [UIColor clearColor];
                 
                 colors[index] = color;
-                values[index] = [_dataSource pieChart:self valueForSliceAtIndex:index];
+                
+                CGFloat value = [_dataSource pieChart:self valueForSliceAtIndex:index];
+                
+                if (value > 0) {
+                    _nonZeroValues++;
+                }
+                values[index] = value;
                 sum += values[index];
             }
             
             
             // 2. Calculate angles from exisiting values:
-            for (int index = 0; index < sliceCount; index++) {
+            for (int index = 0; index < _sliceCount; index++) {
                 double div;
                 if (sum == 0)
                     div = 0;
@@ -243,7 +253,7 @@
             // 4. Draw loop:
             double startFromAngle =_startPieAngle;
             
-            for(int index = 0; index < sliceCount; index ++){
+            for(int index = 0; index < _sliceCount; index ++){
                 
                 double angle = angles[index];
                 double endFromAngle = startFromAngle + angle;
@@ -408,7 +418,7 @@
     CGFloat angleDiff = ABS(angleEnd - angleStart);
     
     // Draw marks:
-    if(_valueSeparatorLineWidth > 0 && angleDiff < M_PI * 2.0){
+    if(_valueSeparatorLineWidth > 0 && _nonZeroValues > 1){
         
         
         CGFloat radius          = _pieRadius;
