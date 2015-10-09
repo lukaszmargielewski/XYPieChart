@@ -1,85 +1,22 @@
 #import "XYPieChart.h"
 #import <QuartzCore/QuartzCore.h>
 
-@implementation SliceLayer
-
-@synthesize text = _text;
-@synthesize value = _value;
-@synthesize percentage = _percentage;
-@synthesize startAngle = _startAngle;
-@synthesize endAngle = _endAngle;
-@synthesize isSelected = _isSelected;
-@synthesize backgroundRenderer = _backgroundRenderer;
-
-
-- (NSString*)description{
-    return [NSString stringWithFormat:@"value:%f, percentage:%0.0f, start:%f, end:%f", _value, _percentage, _startAngle/M_PI*180, _endAngle/M_PI*180];
-}
-
-+ (BOOL)needsDisplayForKey:(NSString *)key {
-    if ([key isEqualToString:@"startAngle"] || [key isEqualToString:@"endAngle"]) {
-        return YES;
-    }
-    else {
-        return [super needsDisplayForKey:key];
-    }
-}
-- (id)initWithLayer:(id)layer{
-    if (self = [super initWithLayer:layer])
-    {
-        if ([layer isKindOfClass:[SliceLayer class]]) {
-            self.startAngle = [(SliceLayer *)layer startAngle];
-            self.endAngle = [(SliceLayer *)layer endAngle];
-        }
-    }
-    return self;
-}
-
-
--(void)setBackgroundRenderer:(CARadialGradientRenderer *)backgroundRenderer{
-
-    _backgroundRenderer = backgroundRenderer;
-    backgroundRenderer.sliceLayer = self;
-    
-}
-@end
-
-@interface XYPieChart (Private) 
-- (void)updateTimerFired:(NSTimer *)timer;
-- (SliceLayer *)createSliceLayerAtIndex:(NSUInteger)index;
-- (CGSize)sizeThatFitsString:(NSString *)string;
-- (void)notifyDelegateOfSelectionChangeFrom:(NSUInteger)previousSelection to:(NSUInteger)newSelection;
-@end
 
 @implementation XYPieChart
 {
-
-    UIView  *_pieView;
-    CARadialGradientRenderer *_renderer;
+    
+    CGRect _pieOuterFrame;
+    CGRect _pieInnerFrame;
+    
+    CGSize _renderPieSize;
+    CGPoint _renderCenter;
     
 }
 
-@synthesize dataSource = _dataSource;
-@synthesize delegate = _delegate;
-@synthesize startPieAngle = _startPieAngle;
-@synthesize animationSpeed = _animationSpeed;
-@synthesize pieCenter = _pieCenter;
-@synthesize pieRadius = _pieRadius;
-@synthesize pieWidth = _pieWidth;
-@synthesize pieAnlgeStep = _pieAnlgeStep;
-@synthesize pieSteps = _pieSteps;
-
-@synthesize showLabel = _showLabel;
-@synthesize labelFont = _labelFont;
-@synthesize labelColor = _labelColor;
-@synthesize labelShadowColor = _labelShadowColor;
-@synthesize labelRadius = _labelRadius;
-@synthesize selectedSliceStroke = _selectedSliceStroke;
-@synthesize selectedSliceOffsetRadius = _selectedSliceOffsetRadius;
-@synthesize showPercentage = _showPercentage;
-@synthesize name = _name;
-@synthesize pieView = _pieView;
 @synthesize centerSugestedSize = _centerSugestedSize;
+@synthesize pieLayer = _pieLayer;
+@synthesize centerBackgroundLayer = _centerBackgroundLayer;
+@synthesize centerContentLayer = _centerContentLayer;
 
 -(id)initWithCoder:(NSCoder *)aDecoder{
 
@@ -100,77 +37,131 @@
     return self;
 }
 -(void)commonInit{
-
-    _renderer  = [[CARadialGradientRenderer alloc] init];
-    CGRect frame = self.bounds;
     
     self.backgroundColor = [UIColor clearColor];
-    _pieView = [[UIView alloc] initWithFrame:frame];
-    //_pieView.layer.contentsScale = [UIScreen mainScreen].scale;
-    [_pieView setBackgroundColor:[UIColor clearColor]];
-    [self addSubview:_pieView];
-    
-    CGFloat A = MIN(self.bounds.size.width, self.bounds.size.height);
-    float pieSize   = A / (sqrt(2.0f));
-    _centerSugestedSize = CGSizeMake(pieSize, pieSize);
-     
-    
-    
-    _startPieAngle = -M_PI_2;
-    _selectedSliceStroke = 3.0;
-    
-    self.pieWidth = 5.0;
-    self.pieCenterPadding = 1.0;
-    self.pieRadius = (_centerSugestedSize.width / 2.0) + _pieWidth + _pieCenterPadding;
-    
-    self.pieCenter = CGPointMake(frame.size.width/2, frame.size.height/2);
-    self.labelFont = [UIFont boldSystemFontOfSize:MAX((int)self.pieRadius/10, 5)];
-    _labelColor = [UIColor whiteColor];
-    _labelRadius = _pieRadius/2;
-    _selectedSliceOffsetRadius = MAX(10, _pieRadius/10);
+    _pieLayer = [CALayer layer];
+    _pieLayer.contentsGravity = kCAGravityCenter;
     
     CGFloat scale = [[UIScreen mainScreen] scale];
     
     _centerBackgroundLayer = [CALayer layer];
-    _centerBackgroundLayer.contentsGravity = (scale > 2) ? kCAGravityResizeAspectFill : kCAGravityCenter;
+    _centerBackgroundLayer.contentsGravity = kCAGravityResizeAspect;
     
     _centerContentLayer = [CALayer layer];
     _centerContentLayer.contentsGravity = kCAGravityCenter;
     _centerContentLayer.masksToBounds = YES;
-    _centerBackgroundLayer.contentsScale = _centerContentLayer.contentsScale = scale;
+    
+    _pieLayer.contentsScale =
+    _centerBackgroundLayer.contentsScale =
+    _centerContentLayer.contentsScale = scale;
     [_centerBackgroundLayer addSublayer:_centerContentLayer];
     
     [self.layer addSublayer:_centerBackgroundLayer];
+    [self.layer addSublayer:_pieLayer];
     
-    _showLabel = YES;
-    _showPercentage = YES;
+    CGRect frame = self.frame;
+    _pieRadius = MIN(CGRectGetWidth(frame), CGRectGetHeight(frame)) / 2.0;
+    [self recalculateLayoutWithReload:NO];
+    
 }
+- (void)setFrame:(CGRect)frame{
 
+    [super setFrame:frame];
+    
+    if (_pieRadius == 0) {
+       _pieRadius = MIN(CGRectGetWidth(frame), CGRectGetHeight(frame)) / 2.0;
+        [self recalculateLayoutWithReload:NO];
+    }
+}
+- (void)recalculateLayoutWithReload:(BOOL)reload{
 
-- (void)setPieCenter:(CGPoint)pieCenter{
-    [_pieView setCenter:pieCenter];
-    _pieCenter = CGPointMake(_pieView.frame.size.width/2, _pieView.frame.size.height/2);
+    CGFloat W = CGRectGetWidth(self.bounds);
+    
+    CGFloat wOuter = (_pieRadius) * 2.0;
+    CGFloat xOuter = (W - wOuter) / 2.0;
+    
+    CGFloat radiusInner = _pieRadius - (_pieCenterPadding + _pieWidth);
+    
+    
+    CGFloat wInner = (radiusInner) * 2.0;
+    CGFloat xInner = (W - wInner) / 2.0;
+    
+    _pieOuterFrame = CGRectIntegral(CGRectMake(xOuter, xOuter, wOuter, wOuter));
+    _pieInnerFrame = CGRectIntegral(CGRectMake(xInner, xInner, wInner, wInner));
+    
+    _renderPieSize = _pieOuterFrame.size;
+    CGFloat w = _renderPieSize.width;
+    CGFloat w2 = w / 2.0;
+    _renderCenter = CGPointMake(w2, w2);
+    
+    
+    CGFloat pieSize     = radiusInner / (sqrt(2.0f));
+    _centerSugestedSize = CGSizeMake(pieSize, pieSize);
+                                         
+    [_pieLayer setFrame:_pieOuterFrame];
+    [_pieLayer setCornerRadius:_pieRadius];
+    
+    _centerBackgroundLayer.frame = _pieInnerFrame;
+    _centerContentLayer.frame = _centerBackgroundLayer.bounds;
+    
+    _centerBackgroundLayer.cornerRadius =
+    _centerContentLayer.cornerRadius = wInner/2;
+    
+    /*
+#ifdef DEBUG
+    self.layer.borderWidth =
+    _centerContentLayer.borderWidth =
+    _centerBackgroundLayer.borderWidth =
+    _pieLayer.borderWidth = 1;
+    
+    _pieLayer.borderColor = [UIColor colorWithRed:1 green:0 blue:0 alpha:0.5].CGColor;
+    _centerContentLayer.borderColor = [UIColor colorWithRed:0 green:1 blue:0 alpha:0.5].CGColor;
+    _centerBackgroundLayer.borderColor = [UIColor colorWithRed:0 green:0 blue:1 alpha:0.5].CGColor;
+    
+#endif
+    */
+    
+    
+    if (reload) {
+    
+        [self reloadData];
+    }
+    
+    
 }
 
 - (void)setPieRadius:(CGFloat)pieRadius{
     
     _pieRadius = pieRadius;
-    CGPoint origin = _pieView.frame.origin;
-    CGRect frame = CGRectMake(origin.x+_pieCenter.x-pieRadius, origin.y+_pieCenter.y-pieRadius, pieRadius*2, pieRadius*2);
-    _pieCenter = CGPointMake(frame.size.width/2, frame.size.height/2);
-    [_pieView setFrame:frame];
-    [_pieView.layer setCornerRadius:_pieRadius];
+    [self setNeedsLayout];
+}
+                                         
+- (void)setPieWidth:(CGFloat)pieWidth{
+    
+    _pieWidth = pieWidth;
+    [self setNeedsLayout];
 }
 
-- (void)setPieBackgroundColor:(UIColor *)color{
-    [_pieView setBackgroundColor:color];
+- (void)setPieCenterPadding:(CGFloat)pieCenterPadding{
+
+    _pieCenterPadding = pieCenterPadding;
+    [self setNeedsLayout];
 }
+
+- (void)layoutSubviews{
+
+    [super layoutSubviews];
+    [self recalculateLayoutWithReload:YES];
+}
+- (void)setPieBackgroundColor:(UIColor *)color{
+
+    [_pieLayer setBackgroundColor:color.CGColor];
+}
+
+
 
 #pragma mark - manage settings
 
-- (void)setShowPercentage:(BOOL)showPercentage{
-    _showPercentage = showPercentage;
-}
 -(void)setPieAnlgeStep:(CGFloat)pieAnlgeStep{
 
     _pieAnlgeStep = pieAnlgeStep;
@@ -185,6 +176,7 @@
     _pieAnlgeStep = (_pieSteps) ? (M_PI * 2.0) / _pieSteps : 0;
 }
 
+
 #pragma mark - Pie Reload Data With Animation
 
 - (void)clear{
@@ -195,6 +187,7 @@
     _centerContentLayer.contents = nil;
     [CATransaction commit];
 }
+
 - (void)reloadData{
     
     CALayer *parentLayer = [self pieParentLayer];
@@ -243,7 +236,7 @@
             }
         
             
-            UIGraphicsBeginImageContextWithOptions(parentLayer.bounds.size, NO, 0);
+            UIGraphicsBeginImageContextWithOptions(_renderPieSize, NO, 0);
             
             CGContextRef ctx = UIGraphicsGetCurrentContext();
             // 4. Draw loop:
@@ -270,11 +263,10 @@
             
         
             CGFloat radius          = _pieRadius;
-            CGPoint center          = _pieCenter;
             CGFloat width           = _pieWidth;
             CGFloat radius_inner    = (radius - width);
             CGFloat angle_step      = _pieAnlgeStep;
-            
+            CGPoint center          = _renderCenter;
             
         CGContextSetStrokeColorWithColor(ctx, [UIColor clearColor].CGColor );
         CGContextSetBlendMode(ctx, kCGBlendModeClear);
@@ -332,17 +324,12 @@
     //DLog(@"Render background for piechart: %i slice at index: %i",pieChart.tag, index);
     
     CGFloat radius = _pieRadius;
-    CGPoint center = _pieCenter;
-    
-    // Initialise
-    
-    float width             = _pieWidth;
-    float radius_inner      = (radius - width);
+    CGFloat width             = _pieWidth;
+    CGFloat radius_inner      = (radius - width);
+    CGPoint center          = _renderCenter;
     
     //DLog(@"Rendering for width: %.1f", width);
-    CGPathRef path = CGPathCreateArc(center, radius, _pieWidth, angleStart, angleEnd);
-   
-    
+    CGPathRef path = CGPathCreateArc(center, radius, width, angleStart, angleEnd);
     
     CGContextSaveGState(ctx);
     
@@ -424,7 +411,6 @@
         
         
         CGFloat radius          = _pieRadius;
-        CGPoint center          = _pieCenter;
         CGFloat width           = _pieWidth;
         CGFloat radius_inner    = (radius - width);
         
@@ -467,58 +453,8 @@
     
 }
 
-#pragma mark - Pie Layer Creation Method
--(CALayer *)pieParentLayer{return _pieView.layer;}
--(void)layoutSubviews{
+#pragma mark - Pie Layer Creation Method:
 
-    [super layoutSubviews];
-    
-    
-    // Layout center layers:
-    
-    CGFloat W = CGRectGetWidth(self.bounds);
-    CGFloat w = (_pieRadius - _pieCenterPadding - _pieWidth) * 2.0;
-    
-    CGFloat x = (W - w) / 2.0;
-    
-    CGRect f = CGRectIntegral(CGRectMake(x, x, w, w));
-    
-   
-    _centerBackgroundLayer.frame = f;
-    _centerContentLayer.frame = _centerBackgroundLayer.bounds;
-    _centerBackgroundLayer.cornerRadius = _centerContentLayer.cornerRadius = w/2;
-    [self.layer setCornerRadius:_pieRadius];
-    [self reloadData];
-}
-
-@end
-
-@implementation CARadialGradientRenderer : NSObject
-
-@synthesize pieChart = _pieChart;
-@synthesize sliceLayer = _sliceLayer;
-
-
- 
- - (id<CAAction>)actionForLayer:(CALayer *)theLayer
- forKey:(NSString *)theKey {
- CATransition *theAnimation=nil;
- 
- if ([theKey isEqualToString:@"contents"]) {
- 
- theAnimation = [[CATransition alloc] init];
- theAnimation.duration = 1.0;
- theAnimation.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseIn];
- theAnimation.type = kCATransitionFade;
- //theAnimation.subtype = kCATransitionFade;
- }
- return theAnimation;
- }
- 
-/*
-- (id<CAAction>)actionForLayer:(CALayer *)layer forKey:(NSString *)key {
-    return [NSNull null];
-}
- */
+-(CALayer *)pieParentLayer{return _pieLayer;}
 
 @end

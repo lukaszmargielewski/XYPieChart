@@ -29,33 +29,6 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 
-@class XYPieChart;
-@class SliceLayer;
-
-@interface CARadialGradientRenderer : NSObject
-
-@property (nonatomic, weak)     XYPieChart *pieChart;
-@property (nonatomic, weak)     SliceLayer *sliceLayer;
-
--(void)renderpieChart:(XYPieChart *)pieChart inLayer:(CALayer *)layer;
-
-@end
-
-
-@interface SliceLayer : CAShapeLayer
-
-@property (nonatomic, assign) CGFloat   value;
-@property (nonatomic, assign) CGFloat   percentage;
-@property (nonatomic, assign) double    startAngle;
-@property (nonatomic, assign) double    endAngle;
-
-@property (nonatomic, assign) BOOL      isSelected;
-@property (nonatomic, strong) NSString  *text;
-
-@property (nonatomic, strong) CALayer *backgroundLayer;
-@property (nonatomic, strong) CARadialGradientRenderer *backgroundRenderer;
-
-@end
 
 static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat width, CGFloat startAngle, CGFloat endAngle){
     
@@ -71,66 +44,51 @@ static CGMutablePathRef CGPathCreateArc(CGPoint center, CGFloat radius, CGFloat 
     return path;
 }
 
+@class XYPieChart;
 
 @protocol XYPieChartDataSource <NSObject>
+
 @required
+
 - (NSUInteger)numberOfSlicesInPieChart:(XYPieChart *)pieChart;
 - (CGFloat)pieChart:(XYPieChart *)pieChart valueForSliceAtIndex:(NSUInteger)index;
-
-@optional
 - (UIColor *)pieChart:(XYPieChart *)pieChart colorForSliceAtIndex:(NSUInteger)index;
-- (NSString *)pieChart:(XYPieChart *)pieChart textForSliceAtIndex:(NSUInteger)index;
--(dispatch_queue_t)renderQueueForPieChart:(XYPieChart *)pieChart;
 
-@end
-
-@protocol XYPieChartDelegate <NSObject>
 @optional
-- (void)pieChart:(XYPieChart *)pieChart willSelectSliceAtIndex:(NSUInteger)index;
-- (void)pieChart:(XYPieChart *)pieChart didSelectSliceAtIndex:(NSUInteger)index;
-- (void)pieChart:(XYPieChart *)pieChart willDeselectSliceAtIndex:(NSUInteger)index;
-- (void)pieChart:(XYPieChart *)pieChart didDeselectSliceAtIndex:(NSUInteger)index;
+
+- (dispatch_queue_t)renderQueueForPieChart:(XYPieChart *)pieChart;
+
 @end
 
 @interface XYPieChart : UIView
 
 @property(nonatomic, weak) id<XYPieChartDataSource> dataSource;
-@property(nonatomic, weak) id<XYPieChartDelegate> delegate;
-@property(nonatomic, assign) CGFloat startPieAngle;
-@property(nonatomic, assign) CGFloat animationSpeed;
-@property(nonatomic, assign) CGPoint pieCenter;
-@property(nonatomic, assign) CGFloat pieRadius;
-@property(nonatomic, assign) CGFloat pieAnlgeStep;
-@property(nonatomic, assign) CGFloat valueSeparatorLineWidth UI_APPEARANCE_SELECTOR;
-@property(nonatomic, assign) CGFloat pieSteps;
-@property(nonatomic, assign) CGFloat pieWidth;
-@property(nonatomic, assign) CGFloat pieCenterPadding;
-@property(nonatomic, assign) BOOL    showLabel;
-@property(nonatomic, strong) UIFont  *labelFont;
-@property(nonatomic, strong) UIColor *labelColor;
-@property(nonatomic, strong) UIColor *labelShadowColor;
-@property(nonatomic, assign) CGFloat labelRadius;
-@property(nonatomic, assign) CGFloat selectedSliceStroke;
-@property(nonatomic, assign) CGFloat selectedSliceOffsetRadius;
-@property(nonatomic, assign) BOOL    showPercentage;
 
-@property(nonatomic, assign) int    gradientFill UI_APPEARANCE_SELECTOR;
-@property(nonatomic, assign) int    showsPieSteps UI_APPEARANCE_SELECTOR;
+// Properties not affecting layout:
+@property(nonatomic, assign) CGFloat startPieAngle              UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) CGFloat pieAnlgeStep               UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) CGFloat pieSteps                   UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) CGFloat valueSeparatorLineWidth    UI_APPEARANCE_SELECTOR;
 
+@property(nonatomic, assign) int    gradientFill                UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) int    showsPieSteps               UI_APPEARANCE_SELECTOR;
+
+
+// Properties affecting layout:
+@property(nonatomic, assign) CGFloat pieRadius UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) CGFloat pieWidth UI_APPEARANCE_SELECTOR;
+@property(nonatomic, assign) CGFloat pieCenterPadding UI_APPEARANCE_SELECTOR;
+
+// Read only properties:
 @property (nonatomic, readonly) CGSize centerSugestedSize;
-
-@property (nonatomic, readonly) CATextLayer *centerValueTitleLayer;
-@property (nonatomic, readonly) CATextLayer *centerValueSubtitleLayer;
 @property (nonatomic, readonly) CALayer *centerBackgroundLayer;
 @property (nonatomic, readonly) CALayer *centerContentLayer;
-@property (nonatomic, readonly) UIView *pieView;
-@property (nonatomic, strong) NSString *name;
+@property (nonatomic, readonly) CALayer *pieLayer;
 
+
+// Public API:
 - (void)reloadData;
 - (void)setPieBackgroundColor:(UIColor *)color;
 - (void)clear;
-- (void)setSliceSelectedAtIndex:(NSInteger)index;
-- (void)setSliceDeselectedAtIndex:(NSInteger)index;
-
 
 @end;
