@@ -324,7 +324,10 @@
 
 }
 
--(void)renderPieInContext:(CGContextRef)ctx fromAngle:(float)angleStart toAngleAngleEnd:(float)angleEnd withColor:(UIColor *)color{
+-(void)renderPieInContext:(CGContextRef)ctx
+                fromAngle:(float)angleStart
+          toAngleAngleEnd:(float)angleEnd
+                withColor:(UIColor *)color{
     
     //DLog(@"Render background for piechart: %i slice at index: %i",pieChart.tag, index);
     
@@ -414,6 +417,50 @@
         
     }
     
+    CGFloat angleDiff = ABS(angleEnd - angleStart);
+    
+    // Draw marks:
+    if(_valueSeparatorLineWidth > 0 && angleDiff < M_PI * 2.0){
+        
+        
+        CGFloat radius          = _pieRadius;
+        CGPoint center          = _pieCenter;
+        CGFloat width           = _pieWidth;
+        CGFloat radius_inner    = (radius - width);
+        
+        
+        CGContextSetStrokeColorWithColor(ctx, [UIColor clearColor].CGColor );
+        CGContextSetBlendMode(ctx, kCGBlendModeClear);
+        
+        CGMutablePathRef pathMarks = CGPathCreateMutable();
+        
+            
+            CGFloat sina = sinf(angleStart);
+            CGFloat cosa = cosf(angleStart);
+            
+            CGPoint pInner = CGPointMake(center.x + radius_inner    * cosa , center.y + radius_inner   * sina);
+            CGPoint pOuter = CGPointMake(center.x + radius          * cosa , center.y + radius         * sina);
+            
+            CGPathMoveToPoint(pathMarks, NULL, pInner.x, pInner.y);
+            CGPathAddLineToPoint(pathMarks, NULL, pOuter.x, pOuter.y);
+
+        
+        sina = sinf(angleEnd);
+        cosa = cosf(angleEnd);
+        
+        pInner = CGPointMake(center.x + radius_inner    * cosa , center.y + radius_inner   * sina);
+        pOuter = CGPointMake(center.x + radius          * cosa , center.y + radius         * sina);
+        
+        CGPathMoveToPoint(pathMarks, NULL, pInner.x, pInner.y);
+        CGPathAddLineToPoint(pathMarks, NULL, pOuter.x, pOuter.y);
+
+        
+        CGContextSetLineWidth(ctx, _valueSeparatorLineWidth);
+        CGContextAddPath(ctx, pathMarks);
+        CGContextStrokePath(ctx);
+        CGPathRelease(pathMarks);
+    }
+
     
     
     CGContextRestoreGState(ctx);
