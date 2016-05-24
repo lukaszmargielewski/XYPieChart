@@ -7,7 +7,7 @@
 //
 
 #import "AppDelegate.h"
-
+#import "XYPieChart.h"
 #import "ViewController.h"
 
 @implementation AppDelegate
@@ -17,6 +17,15 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    
+    [[XYPieChart appearance] setGradientFill:NO];
+    [[XYPieChart appearance] setShowsPieSteps:NO];
+    [[XYPieChart appearance] setValueSeparatorLineWidth:0];
+    [[XYPieChart appearance] setPieWidth:5.0];
+    [[XYPieChart appearance] setStartPieAngle:-M_PI_2];
+    [[XYPieChart appearance] setPieCenterPadding:1.0];
+    [[XYPieChart appearance] setPieRadius:42];
+    
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     // Override point for customization after application launch.
     self.viewController = [[ViewController alloc] initWithNibName:@"ViewController" bundle:nil];

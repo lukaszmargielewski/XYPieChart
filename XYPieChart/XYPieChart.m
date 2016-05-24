@@ -202,7 +202,13 @@
     
         // 3. Prepare graphics context:
         
-        dispatch_queue_t queue = [_dataSource renderQueueForPieChart:self];
+        dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+        if ([_dataSource respondsToSelector:@selector(renderQueueForPieChart:)]) {
+            dispatch_queue_t q = [_dataSource renderQueueForPieChart:self];
+            if (q != NULL) {
+                queue = q;
+            }
+        }
         
         dispatch_async(queue, ^{
             
