@@ -90,8 +90,8 @@
     CGFloat wInner = (radiusInner) * 2.0;
     CGFloat xInner = (W - wInner) / 2.0;
     
-    _pieOuterFrame = CGRectIntegral(CGRectMake(xOuter, xOuter, wOuter, wOuter));
-    _pieInnerFrame = CGRectIntegral(CGRectMake(xInner, xInner, wInner, wInner));
+    _pieOuterFrame = /*CGRectIntegral*/(CGRectMake(xOuter, xOuter, wOuter, wOuter));
+    _pieInnerFrame = /*CGRectIntegral*/(CGRectMake(xInner, xInner, wInner, wInner));
     
     _renderPieSize = _pieOuterFrame.size;
     CGFloat w = _renderPieSize.width;
@@ -265,9 +265,6 @@
                 double endFromAngle = startFromAngle + angle;
                 
                 UIColor *color = colors[index];
-                
-                //DLog(@"chart: %i. pie: %i angle start: %.1f, angle end: %.1f color(%.2f, %.2f, %.2f, %.2f)", self.tag, index, startFromAngle, endFromAngle, [color red], [color green], [color blue], [color alpha]);
-                
                 [self renderPieInContext:ctx fromAngle:startFromAngle toAngleAngleEnd:endFromAngle withColor:color];
                 
                 startFromAngle = endFromAngle;
@@ -447,7 +444,6 @@
             CGPathMoveToPoint(pathMarks, NULL, pInner.x, pInner.y);
             CGPathAddLineToPoint(pathMarks, NULL, pOuter.x, pOuter.y);
 
-        
         sina = sinf(angleEnd);
         cosa = cosf(angleEnd);
         
@@ -463,11 +459,7 @@
         CGContextStrokePath(ctx);
         CGPathRelease(pathMarks);
     }
-
-    
-    
     CGContextRestoreGState(ctx);
-    
 }
 
 #pragma mark - Pie Layer Creation Method:
